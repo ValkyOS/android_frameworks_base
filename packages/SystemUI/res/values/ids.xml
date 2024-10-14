@@ -313,4 +313,8 @@
 
     <!-- Identifier for the phishing animated smart action. -->
     <item type="id" name="is_phishing_animated_action" />
+
+    <!-- Clock face -->
+    <item type="id" name="original_text_color" />
+    <item type="id" name="original_typeface" />
 </resources>

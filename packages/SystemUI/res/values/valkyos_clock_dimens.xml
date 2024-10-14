@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: crDroid Android Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<resources>
+    <!-- Lockscreen clock styles -->
+    <dimen name="custom_clock_frame_margin_top">0dp</dimen>
+</resources>
