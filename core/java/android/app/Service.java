@@ -24,6 +24,7 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
@@ -770,6 +771,11 @@ public abstract class Service extends ContextWrapper implements ComponentCallbac
      * @see #stopForeground(boolean)
      */
     public final void startForeground(int id, Notification notification) {
+        if (GmsCompat.isEnabled()) {
+            startForeground(id, notification, FOREGROUND_SERVICE_TYPE_MANIFEST);
+            return;
+        }
+
         try {
             final ComponentName comp = new ComponentName(this, mClassName);
             mActivityManager.setServiceForeground(
@@ -857,6 +863,10 @@ public abstract class Service extends ContextWrapper implements ComponentCallbac
      */
     public final void startForeground(int id, @NonNull Notification notification,
             @RequiresPermission @ForegroundServiceType int foregroundServiceType) {
+        if (GmsCompat.isEnabled()) {
+            foregroundServiceType = GmsCompatServiceHooks.translateFgsType(this, foregroundServiceType);
+        }
+
         try {
             final ComponentName comp = new ComponentName(this, mClassName);
             mActivityManager.setServiceForeground(
@@ -865,6 +875,16 @@ public abstract class Service extends ContextWrapper implements ComponentCallbac
             clearStartForegroundServiceStackTrace();
             logForegroundServiceStart(comp, foregroundServiceType);
         } catch (RemoteException ex) {
+        } catch (SecurityException e) {
+            if (GmsCompat.isEnabled()) {
+                Log.e(TAG, "fgsType: " + Integer.toHexString(foregroundServiceType), e);
+                int fgsType2 = GmsCompatServiceHooks.getFgsTypeForRetry(foregroundServiceType);
+                if (fgsType2 != 0) {
+                    startForeground(id, notification, fgsType2);
+                }
+                return;
+            }
+            throw e;
         }
     }
 

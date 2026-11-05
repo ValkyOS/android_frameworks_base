@@ -204,6 +204,9 @@ public class ParsedServiceUtils {
             service.setExported(hasIntentFilters);
         }
 
+        // ValkyOS: GmsCompat (GrapheneOS)
+        pkg.getPackageParsingHooks().amendParsedService(service);
+
         return input.success(service);
     }
 }

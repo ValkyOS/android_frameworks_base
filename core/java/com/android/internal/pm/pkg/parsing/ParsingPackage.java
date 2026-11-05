@@ -49,6 +49,7 @@ import java.security.PublicKey;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.android.internal.pm.parsing.pkg.PackageExtIface;
 
 /**
  * Methods used for mutation during direct package parsing.
@@ -630,4 +631,17 @@ public interface ParsingPackage {
      * Returns the intent matching flags.
      */
     int getIntentMatchingFlags();
+
+    boolean isPartiallyDirectBootAware();
+
+    long getLongVersionCode();
+
+    void initPackageParsingHooks();
+
+    default PackageParsingHooks getPackageParsingHooks() {
+        return PackageParsingHooks.DEFAULT;
+    }
+
+    void setPackageExt(@Nullable PackageExtIface ext);
+
 }

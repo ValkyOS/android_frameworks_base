@@ -21,6 +21,7 @@ import android.annotation.Nullable;
 import android.content.ComponentName;
 import android.content.pm.UserPackage;
 import android.content.pm.pkg.FrameworkPackageUserState;
+import android.content.pm.GosPackageState;
 import android.util.Pair;
 
 import com.android.server.utils.WatchedArrayMap;
@@ -49,4 +50,7 @@ public interface PackageUserStateInternal extends PackageUserState, FrameworkPac
 
     @Nullable
     Pair<String, Integer> getOverrideLabelIconForComponent(@NonNull ComponentName componentName);
+    @NonNull
+    GosPackageState getGosPackageState();
+
 }

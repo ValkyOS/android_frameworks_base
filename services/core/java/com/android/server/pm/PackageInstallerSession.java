@@ -6253,6 +6253,12 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
         }
     }
 
+    // ValkyOS: GmsCompat (GrapheneOS)
+    @Override
+    public int getId() {
+        return sessionId;
+    }
+
     @Override
     public int getParentSessionId() {
         synchronized (mLock) {

@@ -3202,6 +3202,11 @@ public final class ActivityThread extends ClientTransactionHandler
         return sPackageManager;
     }
 
+    /** @hide */
+    public static void clearCachedPackageManager() {
+        sPackageManager = null;
+    }
+
     /** Returns the permission manager */
     public static IPermissionManager getPermissionManager() {
         if (sPermissionManager != null) {
@@ -4296,6 +4301,10 @@ public final class ActivityThread extends ClientTransactionHandler
         if (updatedConfig != null) {
             mPendingConfiguration = updatedConfig;
         }
+    }
+
+    public int getProcessState() {
+        return mLastProcessState;
     }
 
     @Override
@@ -5612,8 +5621,12 @@ public final class ActivityThread extends ClientTransactionHandler
             } else {
                 cl = packageInfo.getClassLoader();
             }
-            service = packageInfo.getAppFactory()
-                    .instantiateService(cl, data.info.name, data.intent);
+            // ValkyOS: GmsCompat (GrapheneOS), services provided by the framework
+            service = com.android.internal.gmscompat.GmsHooks.maybeInstantiateService(data.info.name);
+            if (service == null) {
+                service = packageInfo.getAppFactory()
+                        .instantiateService(cl, data.info.name, data.intent);
+            }
             ContextImpl context = ContextImpl.getImpl(service
                     .createServiceBaseContext(this, packageInfo));
             if (data.info.splitName != null) {

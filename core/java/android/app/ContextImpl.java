@@ -16,11 +16,17 @@
 
 package android.app;
 
+import android.app.compat.gms.GmsCompat;
+import com.android.internal.gmscompat.sysservice.GmcPackageManager;
+
 import static android.content.pm.PackageManager.PERMISSION_DENIED;
 import static android.content.pm.PackageManager.PERMISSION_GRANTED;
 import static android.os.StrictMode.vmIncorrectContextUseEnabled;
 import static android.permission.flags.Flags.shouldRegisterAttributionSource;
 import static android.view.WindowManager.LayoutParams.WindowType;
+import static com.android.internal.app.ContentProviderRedirector.translateContentProviderAuthority;
+import static com.android.internal.gmscompat.GmcDebug.maybeLogSendBroadcast;
+import static com.android.internal.gmscompat.GmcDebug.maybeLogStartService;
 
 import android.annotation.CallbackExecutor;
 import android.annotation.IntDef;
@@ -30,6 +36,7 @@ import android.annotation.SpecialUsers.CanBeALL;
 import android.annotation.SpecialUsers.CanBeCURRENT;
 import android.annotation.SuppressLint;
 import android.annotation.UiContext;
+import android.app.compat.gms.GmsCompat;
 import android.companion.virtual.VirtualDeviceManager;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.AttributionSource;
@@ -113,6 +120,13 @@ import android.window.WindowTokenClient;
 import android.window.WindowTokenClientController;
 
 import com.android.internal.annotations.GuardedBy;
+import com.android.internal.gmscompat.GmcDebug;
+import com.android.internal.gmscompat.GmsCompatApp;
+import com.android.internal.gmscompat.GmsCompatLib;
+import com.android.internal.gmscompat.IGmsCompatLib;
+import com.android.internal.gmscompat.sysservice.GmcPackageManager;
+import com.android.internal.gmscompat.GmsHooks;
+import com.android.internal.gmscompat.sysservice.GmcUserManager;
 import com.android.internal.util.Preconditions;
 
 import dalvik.system.BlockGuard;
@@ -466,7 +480,9 @@ class ContextImpl extends Context {
     private PackageManager getPackageManagerInner() {
         final IPackageManager pm = ActivityThread.getPackageManager();
         if (pm != null) {
-            return new ApplicationPackageManager(this, pm);
+            return GmsCompat.isEnabled() ?
+                    new GmcPackageManager(this, pm) :
+                    new ApplicationPackageManager(this, pm);
         }
         return null;
     }
@@ -1322,6 +1338,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1337,6 +1356,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent, String receiverPermission) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1355,6 +1377,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, null, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1372,6 +1397,9 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions,
             Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, options, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1389,6 +1417,9 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastAsUserMultiplePermissions(Intent intent, UserHandle user,
             String[] receiverPermissions) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, null, null, 0);
+        }
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
             intent.prepareToLeaveProcess(this);
@@ -1405,6 +1436,9 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions,
             String[] excludedPermissions, String[] excludedPackages, BroadcastOptions options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, null, options, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1421,6 +1455,11 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent, String receiverPermission, Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, options, 0);
+            options = GmsHooks.filterBroadcastOptions(intent, options);
+        }
+
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1449,6 +1488,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent, String receiverPermission, int appOp) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, appOp);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1472,6 +1514,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendOrderedBroadcast(Intent intent, String receiverPermission, Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, options, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1519,6 +1564,12 @@ class ContextImpl extends Context {
             String receiverPermission, int appOp, BroadcastReceiver resultReceiver,
             Handler scheduler, int initialCode, String initialData,
             Bundle initialExtras, Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, options, null, appOp,
+                    initialCode, initialData, initialExtras);
+            options = GmsHooks.filterBroadcastOptions(intent, options);
+        }
+
         warnIfCallingFromSystemProcess();
         IIntentReceiver rd = null;
         if (resultReceiver != null) {
@@ -1554,6 +1605,11 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcastAsUser(Intent intent, UserHandle user) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, null, 0);
+            user = GmcUserManager.translateUserHandle(user);
+        }
+
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
             intent.prepareToLeaveProcess(this);
@@ -1575,6 +1631,12 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastAsUser(Intent intent, UserHandle user, String receiverPermission,
             Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, options,  0);
+            options = GmsHooks.filterBroadcastOptions(intent, options);
+            user = GmcUserManager.translateUserHandle(user);
+        }
+
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
                 : new String[] {receiverPermission};
@@ -1593,6 +1655,11 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastAsUser(Intent intent, UserHandle user,
             String receiverPermission, int appOp) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, null, null, appOp);
+            user = GmcUserManager.translateUserHandle(user);
+        }
+
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
                 : new String[] {receiverPermission};
@@ -1646,6 +1713,12 @@ class ContextImpl extends Context {
             String[] receiverPermissions, String[] excludedPermissions, int appOp, Bundle options,
             BroadcastReceiver resultReceiver, Handler scheduler, int initialCode,
             String initialData, Bundle initialExtras) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, options, null, appOp, initialCode, initialData, initialExtras);
+            options = GmsHooks.filterBroadcastOptions(intent, options);
+            user = GmcUserManager.translateUserHandle(user);
+        }
+
         IIntentReceiver rd = null;
         if (resultReceiver != null) {
             if (mPackageInfo != null) {
@@ -2104,27 +2177,42 @@ class ContextImpl extends Context {
 
     private ComponentName startServiceCommon(Intent service, boolean requireForeground,
             UserHandle user) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogStartService(service, requireForeground);
+        }
         // Keep this in sync with ActivityManagerLocal.startSdkSandboxService
         try {
             validateServiceIntent(service);
             service.prepareToLeaveProcess(this);
-            ComponentName cn = ActivityManager.getService().startService(
-                    mMainThread.getApplicationThread(), service,
-                    service.resolveTypeIfNeeded(getContentResolver()), requireForeground,
-                    getOpPackageName(), getAttributionTag(), user.getIdentifier());
-            if (cn != null) {
-                if (cn.getPackageName().equals("!")) {
-                    throw new SecurityException(
-                            "Not allowed to start service " + service
-                            + " without permission " + cn.getClassName());
-                } else if (cn.getPackageName().equals("!!")) {
-                    throw new SecurityException(
-                            "Unable to start service " + service
-                            + ": " + cn.getClassName());
-                } else if (cn.getPackageName().equals("?")) {
-                    throw ServiceStartNotAllowedException.newInstance(requireForeground,
-                            "Not allowed to start service " + service + ": " + cn.getClassName());
+            ComponentName cn;
+            for (int i = 0;; ++i) {
+                cn = ActivityManager.getService().startService(
+                        mMainThread.getApplicationThread(), service,
+                        service.resolveTypeIfNeeded(getContentResolver()), requireForeground,
+                        getOpPackageName(), getAttributionTag(), user.getIdentifier());
+                if (cn != null) {
+                    if (cn.getPackageName().equals("!")) {
+                        throw new SecurityException(
+                                "Not allowed to start service " + service
+                                + " without permission " + cn.getClassName());
+                    } else if (cn.getPackageName().equals("!!")) {
+                        throw new SecurityException(
+                                "Unable to start service " + service
+                                + ": " + cn.getClassName());
+                    } else if (cn.getPackageName().equals("?")) {
+                        if (GmsCompat.isEnabled() && i == 0) {
+                            Log.d("GmsCompat", "unable to start " + service + ", requireForeground: " + requireForeground);
+                            String reason = "GmsCompat: " + service + ", requireForeground: " + requireForeground;
+                            // foreground apps are always allowed to start services
+                            GmsCompatApp.raisePackageToForeground(GmsCompat.appContext().getPackageName(),
+                                    30_000, reason, android.os.PowerExemptionManager.REASON_OTHER);
+                            continue;
+                        }
+                        throw ServiceStartNotAllowedException.newInstance(requireForeground,
+                                "Not allowed to start service " + service + ": " + cn.getClassName());
+                    }
                 }
+                break;
             }
             // If we started a foreground service in the same package, remember the stack trace.
             if (cn != null && requireForeground) {
@@ -2146,6 +2234,9 @@ class ContextImpl extends Context {
     }
 
     private boolean stopServiceCommon(Intent service, UserHandle user) {
+        if (GmsCompat.isEnabled()) {
+            GmcDebug.maybeLogStopService(service);
+        }
         // // Keep this in sync with ActivityManagerLocal.stopSdkSandboxService
         try {
             validateServiceIntent(service);
@@ -2287,6 +2378,15 @@ class ContextImpl extends Context {
         if (handler != null && executor != null) {
             throw new IllegalArgumentException("Handler and Executor both supplied");
         }
+
+        IGmsCompatLib gmcLib = GmsCompatLib.get();
+        if (gmcLib != null) {
+            ServiceConnection connOverride = gmcLib.maybeReplaceServiceConnection(service, flags, user, conn);
+            if (connOverride != null) {
+                conn = connOverride;
+            }
+        }
+
         if (mPackageInfo != null) {
             if (executor != null) {
                 sd = mPackageInfo.getServiceDispatcher(conn, getOuterContext(), executor, flags);
@@ -2297,6 +2397,26 @@ class ContextImpl extends Context {
             throw new RuntimeException("Not supported in system context");
         }
         validateServiceIntent(service);
+
+        if (GmsCompat.isEnabled()) {
+            if (!GmsCompat.hasPermission(android.Manifest.permission.START_ACTIVITIES_FROM_BACKGROUND)) {
+                flags &= ~BIND_ALLOW_BACKGROUND_ACTIVITY_STARTS;
+            }
+            GmcDebug.maybeLogBindService(service, conn, flags, instanceName);
+        }
+
+        String pkg = service.getPackage();
+        if (pkg == null) {
+            ComponentName cn = service.getComponent();
+            if (cn != null) {
+                pkg = cn.getPackageName();
+            }
+        }
+
+        if (pkg != null && GmsCompat.isGmsAppAndUnprivilegedProcess(pkg)) {
+            flags |= BIND_ALLOW_ACTIVITY_STARTS;
+        }
+
         try {
             IBinder token = getActivityToken();
             if (token == null && (flags&BIND_AUTO_CREATE) == 0 && mPackageInfo != null
@@ -2375,6 +2495,9 @@ class ContextImpl extends Context {
         if (conn == null) {
             throw new IllegalArgumentException("connection is null");
         }
+        if (GmsCompat.isEnabled()) {
+            GmcDebug.maybeLogUnbindService(conn);
+        }
         if (mPackageInfo != null) {
             IServiceConnection sd = mPackageInfo.forgetServiceDispatcher(
                     getOuterContext(), conn);
@@ -2432,6 +2555,12 @@ class ContextImpl extends Context {
     @Override
     @RavenwoodKeep
     public Object getSystemService(String name) {
+        if (GmsCompat.isEnabled()) {
+            if (GmsHooks.isHiddenSystemService(name)) {
+                return null;
+            }
+        }
+
         if (vmIncorrectContextUseEnabled()) {
             // Check incorrect Context usage.
             if (WINDOW_SERVICE.equals(name) && !isUiContext()) {
@@ -2493,12 +2622,44 @@ class ContextImpl extends Context {
                 Binder.getCallingUid()) == PERMISSION_GRANTED;
     }
 
+    private final static String TAG_SPOOF = "GmcContext";
+
     @Override
     @RavenwoodRedirect(comment = "Returns PERMISSION_DENIED by default on Ravenwood")
     public int checkPermission(String permission, int pid, int uid) {
         if (permission == null) {
             throw new IllegalArgumentException("permission is null");
         }
+
+        // TODO: In Android 17, READ_PRIVILEGED_PHONE_STATE will no longer be accepted for
+        //  TelephonyManager#getIccAuthentication. However, Manifest.permission.USE_ICC_AUTH was
+        //  introduced. getIccAuthentication can accept this new permission along with preexisting
+        //  Manifest.permission.USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER. Need to pay attention to how
+        //  GmsCore uses USE_ICC_AUTH or USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER.
+        if (GmsCompat.isGmsCore() &&
+                android.Manifest.permission.READ_PRIVILEGED_PHONE_STATE.equals(permission)) {
+            if (Log.isLoggable(TAG_SPOOF, Log.VERBOSE)) {
+                Log.v(TAG_SPOOF, "checking " + permission + " for pid " + pid + ", uid " + uid
+                        + ", thread name " + Thread.currentThread().getName(), new Throwable());
+            }
+            // The TS43 verifier calls this permission check for READ_PRIVILEGED_PHONE_STATE. If
+            // not granted, it does not run any of its verification code, since it needs the
+            // permission for TelephonyManager#getIccAuthentication to complete EAP-AKA
+            // challenge-response. However, getIccAuthentication also accepts the narrower
+            // USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER permission, and says READ_PRIVILEGED_PHONE_STATE
+            // is deprecated for it.
+            if (pid == Process.myPid() && uid == Process.myUid()) {
+                // Scope the READ_PRIVILEGED_PHONE_STATE spoofing to phone verification requests so
+                // that we don't cause crashes if GmsCore expects READ_PRIVILEGED_PHONE_STATE
+                // elsewhere
+                if (GmsCompat.isConstellationPhoneVerifyThread(Thread.currentThread())) {
+                    String newPerm = android.Manifest.permission.USE_ICC_AUTH_WITH_DEVICE_IDENTIFIER;
+                    Log.d(TAG_SPOOF, "checkPermission: checking " + newPerm + " instead of " + permission);
+                    permission = newPerm;
+                }
+            }
+        }
+
         if (mParams.isRenouncedPermission(permission)
                 && pid == android.os.Process.myPid() && uid == android.os.Process.myUid()) {
             Log.v(TAG, "Treating renounced permission " + permission + " as denied");
@@ -2564,6 +2725,12 @@ class ContextImpl extends Context {
         if (mParams.isRenouncedPermission(permission)) {
             Log.v(TAG, "Treating renounced permission " + permission + " as denied");
             return PERMISSION_DENIED;
+        }
+
+        if (GmsCompat.isEnabled()) {
+            if (GmsHooks.shouldSpoofSelfPermissionCheck(permission)) {
+                return PERMISSION_GRANTED;
+            }
         }
 
         return checkPermission(permission, Process.myPid(), Process.myUid());
@@ -2942,6 +3109,13 @@ class ContextImpl extends Context {
     @Override
     public Context createPackageContext(String packageName, int flags)
             throws NameNotFoundException {
+        if (GmsCompat.isEnabled()) {
+            Context res = GmcPackageManager.maybeOverrideGsfPackageContext(packageName);
+            if (res != null) {
+                return res;
+            }
+        }
+
         return createPackageContextAsUser(packageName, flags, mUser);
     }
 

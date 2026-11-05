@@ -22,6 +22,7 @@ import android.annotation.Nullable;
 import android.annotation.SystemApi;
 import android.content.pm.PackageManager;
 import android.content.pm.overlay.OverlayPaths;
+import android.content.pm.GosPackageState;
 import android.os.UserHandle;
 import android.processor.immutability.Immutable;
 import android.util.ArraySet;
@@ -135,6 +136,11 @@ public interface PackageUserState {
      */
     @PackageManager.EnabledState
     int getEnabledState();
+
+    /** @hide */
+    @Immutable.Ignore
+    @NonNull
+    GosPackageState getGosPackageState();
 
     /**
      * @hide

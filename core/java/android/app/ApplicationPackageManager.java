@@ -2284,8 +2284,8 @@ public class ApplicationPackageManager extends PackageManager {
 
     @UnsupportedAppUsage
     @RavenwoodKeep
-    protected ApplicationPackageManager(ContextImpl context, IPackageManager pm) {
-        mContext = context;
+    protected ApplicationPackageManager(Context context, IPackageManager pm) {
+        mContext = (ContextImpl) context;
         mPM = pm;
         mUseSystemFeaturesCache = isSystemFeaturesCacheAvailable();
     }

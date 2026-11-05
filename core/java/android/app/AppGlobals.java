@@ -18,6 +18,7 @@ package android.app;
 
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.pm.IPackageManager;
+import android.ext.PackageId;
 import android.permission.IPermissionManager;
 
 /**
@@ -43,6 +44,17 @@ public class AppGlobals {
         return ActivityThread.currentPackageName();
     }
 
+
+    private static int initialPackageId = PackageId.UNKNOWN;
+
+    public static void setInitialPackageId(int value) {
+        initialPackageId = value;
+    }
+
+    // PackageId of the first APK loaded into the process.
+    public static int getInitialPackageId() {
+        return initialPackageId;
+    }
     /**
      * Return the raw interface to the package manager.
      * @return The package manager.

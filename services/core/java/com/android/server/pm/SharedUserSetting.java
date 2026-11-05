@@ -44,6 +44,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import android.content.pm.GosPackageState;
+import android.util.SparseArray;
+import com.android.server.pm.pkg.PackageUserStateInternal;
 
 /**
  * Settings data for a particular shared user ID we know about.
@@ -174,10 +177,56 @@ public final class SharedUserSetting extends SettingBase implements SharedUserAp
         }
     }
 
+    @Override
+    public void syncGosPackageState() {
+        syncGosPackageState(mPackages);
+    }
+
+    // Makes GosPackageState the same for all packages in this SharedUser in each userId.
+    // See GosPackageState class comment for more info.
+    private static void syncGosPackageState(WatchedArraySet<PackageSetting> packages) {
+        final int numPkgs = packages.size();
+        // userId -> GosPackageState
+        SparseArray<GosPackageState> userGosPs = null;
+
+        for (int pkgIdx = 0; pkgIdx < numPkgs; ++pkgIdx) {
+            PackageSetting s = packages.valueAt(pkgIdx);
+            SparseArray<? extends PackageUserStateInternal> userStates = s.getUserStates();
+            for (int userIndex = 0, numUsers = userStates.size(); userIndex < numUsers; ++userIndex) {
+                int userId = userStates.keyAt(userIndex);
+                for (int i = 0; i < numPkgs; ++i) {
+                    GosPackageState gosPs = packages.valueAt(i).getUserStateOrDefault(userId).getGosPackageState();
+                    if (!gosPs.equals(GosPackageState.DEFAULT)) {
+                        if (userGosPs == null) {
+                            userGosPs = new SparseArray<>();
+                        }
+                        userGosPs.set(userId, gosPs);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (userGosPs == null) {
+            return;
+        }
+
+        for (int idx = 0, numUsers = userGosPs.size(); idx < numUsers; ++idx) {
+            int userId = userGosPs.keyAt(idx);
+            GosPackageState ps = userGosPs.valueAt(idx);
+            for (int pkgIdx = 0; pkgIdx < numPkgs; ++pkgIdx) {
+                PackageSetting s = packages.valueAt(pkgIdx);
+                s.setGosPackageState(userId, ps);
+            }
+        }
+    }
+
     boolean removePackage(PackageSetting packageSetting) {
         if (!mPackages.remove(packageSetting)) {
             return false;
         }
+        clearGosPackageStateCachedDerivedFlags();
+
         // recalculate the pkgFlags for this shared user if needed
         if ((this.getFlags() & packageSetting.getFlags()) != 0) {
             int aggregatedFlags = uidFlags;
@@ -210,6 +259,9 @@ public final class SharedUserSetting extends SettingBase implements SharedUserAp
         if (mPackages.add(packageSetting)) {
             setFlags(this.getFlags() | packageSetting.getFlags());
             setPrivateFlags(this.getPrivateFlags() | packageSetting.getPrivateFlags());
+
+            clearGosPackageStateCachedDerivedFlags();
+            syncGosPackageState();
             onChanged();
         }
         if (packageSetting.getPkg() != null) {
@@ -410,5 +462,15 @@ public final class SharedUserSetting extends SettingBase implements SharedUserAp
     @Override
     public LegacyPermissionState getSharedUserLegacyPermissionState() {
         return super.getLegacyPermissionState();
+    }
+    // invalidate derived flags when sharedUid members are added/removed
+    private void clearGosPackageStateCachedDerivedFlags() {
+        for (int pkgIdx = 0; pkgIdx < mPackages.size(); pkgIdx++) {
+            PackageSetting ps = mPackages.valueAt(pkgIdx);
+            SparseArray<? extends PackageUserStateInternal> userStates = ps.getUserStates();
+            for (int userStateIdx = 0; userStateIdx < userStates.size(); ++userStateIdx) {
+                userStates.valueAt(userStateIdx).getGosPackageState().derivedFlags = 0;
+            }
+        }
     }
 }

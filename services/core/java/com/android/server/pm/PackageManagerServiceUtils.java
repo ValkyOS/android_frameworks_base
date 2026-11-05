@@ -1276,6 +1276,14 @@ public class PackageManagerServiceUtils {
 
     public static @Nullable File preparePackageParserCache(boolean forEngBuild,
             boolean isUserDebugBuild, String incrementalVersion) {
+        // ValkyOS: GmsCompat package cache (GrapheneOS). PackageExt, which identifies the Google
+        // apps for GmsCompat, is not stored in the package parser cache. Keep the cache disabled,
+        // otherwise GmsCompat stops working after a normal reboot.
+        if (true) {
+            FileUtils.deleteContentsAndDir(Environment.getPackageCacheDirectory());
+            return null;
+        }
+
         if (!FORCE_PACKAGE_PARSED_CACHE_ENABLED) {
             if (!DEFAULT_PACKAGE_PARSER_CACHE_ENABLED) {
                 return null;

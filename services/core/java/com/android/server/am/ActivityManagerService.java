@@ -314,6 +314,7 @@ import android.app.assist.ActivityId;
 import android.app.backup.BackupAnnotations.BackupDestination;
 import android.app.backup.BackupManagerInternal;
 import android.app.compat.CompatChanges;
+import android.app.compat.gms.GmsCompat;
 import android.app.job.JobParameters;
 import android.app.usage.UsageEvents;
 import android.app.usage.UsageEvents.Event;
@@ -11399,7 +11400,15 @@ public class ActivityManagerService extends IActivityManager.Stub
     */
     @NeverCompile // Avoid size overhead of debugging code.
     private void doDump(FileDescriptor fd, PrintWriter pw, String[] args, boolean useProto) {
-        if (!DumpUtils.checkDumpAndUsageStatsPermission(mContext, TAG, pw)) return;
+        // GmsCompat: GmsCore attempts to run 'dumpsys activity --proto broadcasts history' from
+        // IThirdPartyPayService.notifyCardTapEvent to find when
+        // android.nfc.action.TRANSACTION_DETECTED was delivered to the calling app.
+        // ActivityManagerService dump requires the privileged DUMP permission.
+        // Printing a permission error text when protobuf output is requested produces an invalid
+        // protobuf message, which then crashes the GmsCore's parser.
+        // See https://github.com/GrapheneOS/os-issue-tracker/issues/5451
+        if (!DumpUtils.checkDumpAndUsageStatsPermission(mContext, TAG, useProto ?
+                new PrintWriter(new java.io.StringWriter()) : pw)) return;
 
         boolean dumpAll = false;
         boolean dumpClient = false;
@@ -14687,6 +14696,10 @@ public class ActivityManagerService extends IActivityManager.Stub
                 if (ActivityManager.checkUidPermission(
                         INTERACT_ACROSS_USERS,
                         aInfo.uid) != PackageManager.PERMISSION_GRANTED) {
+                    if (GmsCompat.isEnabledFor(aInfo)) {
+                        return false;
+                    }
+
                     ComponentName comp = new ComponentName(aInfo.packageName, className);
                     String msg = "Permission Denial: Component " + comp.flattenToShortString()
                             + " requests FLAG_SINGLE_USER, but app does not hold "

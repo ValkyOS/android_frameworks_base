@@ -48,6 +48,7 @@ import android.app.ActivityManager;
 import android.app.ActivityThread;
 import android.app.AppGlobals;
 import android.app.PendingIntent;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -87,8 +88,10 @@ import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.ArraySet;
 import android.util.ExceptionUtils;
+import android.util.Log;
 
 import com.android.internal.content.InstallLocationUtils;
+import com.android.internal.gmscompat.PlayStoreHooks;
 import com.android.internal.util.ArrayUtils;
 import com.android.internal.util.DataClass;
 import com.android.internal.util.IndentingPrintWriter;
@@ -1123,6 +1126,16 @@ public class PackageInstaller {
      *             the session is invalid.
      */
     public void abandonSession(int sessionId) {
+        if (GmsCompat.isPlayStore()) {
+            SessionInfo si = getSessionInfo(sessionId);
+            if (si != null && si.isCommitted()) {
+                // Play Store doesn't expect committed sessions to be waiting for confirmation from
+                // the user and tries to destroy them after ~10 minutes
+                Log.d("GmsCompat", "skipped PackageInstaller.abandonSession(), sessionId " + sessionId);
+                return;
+            }
+        }
+
         try {
             mInstaller.abandonSession(sessionId);
         } catch (RemoteException e) {
@@ -1409,6 +1422,23 @@ public class PackageInstaller {
         Objects.requireNonNull(archivedPackageInfo, "archivedPackageInfo cannot be null");
         Objects.requireNonNull(sessionParams, "sessionParams cannot be null");
         Objects.requireNonNull(statusReceiver, "statusReceiver cannot be null");
+
+        if (GmsCompat.isPlayStore()) {
+            var fillIn = new Intent();
+            fillIn.putExtra(PackageInstaller.EXTRA_PACKAGE_NAME, archivedPackageInfo.getPackageName());
+            // there's no unprivileged alternative to this API
+            fillIn.putExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE);
+            fillIn.putExtra(PackageInstaller.EXTRA_STATUS_MESSAGE, "installPackageArchived() is not allowed");
+            com.android.internal.os.BackgroundThread.getHandler().post(() -> {
+                try {
+                    statusReceiver.sendIntent(GmsCompat.appContext(), 0, fillIn, null, null);
+                } catch (IntentSender.SendIntentException e) {
+                    Log.d("GmsCompat", "", e);
+                }
+            });
+            return;
+        }
+
         try {
             mInstaller.installPackageArchived(
                     archivedPackageInfo.getParcel(),
@@ -2341,6 +2371,10 @@ public class PackageInstaller {
          * @see #requestUserPreapproval
          */
         public void commit(@NonNull IntentSender statusReceiver) {
+            if (GmsCompat.isPlayStore()) {
+                statusReceiver = PlayStoreHooks.wrapCommitStatusReceiver(this, statusReceiver);
+            }
+
             try {
                 mSession.commit(statusReceiver, false);
             } catch (RemoteException e) {
@@ -2436,6 +2470,20 @@ public class PackageInstaller {
          * would be destroyed and the created {@link Session} information will be discarded.</p>
          */
         public void abandon() {
+            if (GmsCompat.isPlayStore()) {
+                final int id;
+                try {
+                    id = mSession.getId();
+                } catch (RemoteException e) {
+                    throw e.rethrowFromSystemServer();
+                }
+                PackageInstaller packageInstaller = GmsCompat.appContext().getPackageManager()
+                        .getPackageInstaller();
+                // see comment in abandonSession()
+                packageInstaller.abandonSession(id);
+                return;
+            }
+
             try {
                 mSession.abandon();
             } catch (RemoteException e) {
@@ -3192,6 +3240,10 @@ public class PackageInstaller {
         public SessionParams(int mode) {
             this.mode = mode;
             mPermissionStates = new ArrayMap<>();
+            if (GmsCompat.isPlayStore()) {
+                // called here instead of in createSession() to give Play Store a chance to override
+                setRequireUserAction(USER_ACTION_NOT_REQUIRED);
+            }
         }
 
         /** @hide */
@@ -6040,5 +6092,10 @@ public class PackageInstaller {
         @Nullable PendingIntent getUserActionIntent() {
             return mUserActionIntent;
         }
+    }
+
+    /** @hide **/
+    public IPackageInstaller getIPackageInstaller() {
+        return mInstaller;
     }
 }

@@ -16,6 +16,7 @@
 
 package com.android.internal.pm.pkg.component;
 
+import java.util.List;
 import android.annotation.NonNull;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.parsing.result.ParseInput;
@@ -220,6 +221,21 @@ public class ParsedProcessUtils {
                 return input.error(result);
             }
 
+        }
+
+        // ValkyOS: GmsCompat (GrapheneOS)
+        // <processes> tag is required to enumerate all processes. Partial <processes> tag breaks
+        // package installation.
+        if (!processes.isEmpty()) {
+            List<ParsedProcess> extraProcesses = pkg.getPackageParsingHooks().addProcesses(pkg);
+            if (extraProcesses != null) {
+                for (ParsedProcess process : extraProcesses) {
+                    if (processes.put(process.getName(), process) != null) {
+                        return input.error(
+                                "<process> specified existing name '" + process.getName() + "'");
+                    }
+                }
+            }
         }
 
         return input.success(processes);
