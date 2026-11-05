@@ -303,6 +303,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import android.content.pm.GosPackageState;
 
 /**
  * Keep track of all those APKs everywhere.
@@ -344,6 +345,8 @@ import java.util.function.Predicate;
  * </pre>
  */
 public class PackageManagerService implements PackageSender, TestUtilityService {
+    public final GosPackageStatePmHooks gosPackageStatePmHooks;
+
 
     static final String TAG = "PackageManager";
     public static final boolean DEBUG_SETTINGS = false;
@@ -1901,6 +1904,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PRIVATE)
     public PackageManagerService(@NonNull PackageManagerServiceInjector injector,
             @NonNull PackageManagerServiceTestParams testParams) {
+        gosPackageStatePmHooks = new GosPackageStatePmHooks(this);
         mInjector = injector;
         mInjector.bootstrap(this);
         mAppsFilter = injector.getAppsFilter();
@@ -2016,6 +2020,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
             final String partitionsFingerprint, final boolean isEngBuild,
             final boolean isUserDebugBuild, final int sdkVersion, final String incrementalVersion,
             final int sdkVersionFull) {
+        gosPackageStatePmHooks = new GosPackageStatePmHooks(this);
         mIsEngBuild = isEngBuild;
         mIsUserDebugBuild = isUserDebugBuild;
         mSdkVersion = sdkVersion;
@@ -4679,6 +4684,8 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
             dexUseManager.systemReady();
         }
 
+        gosPackageStatePmHooks.init();
+
         PackageMetrics.logInvalidationMetrics();
     }
 
@@ -5762,6 +5769,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
                     PackageManagerService.this::snapshotComputer, pkgName, userId, enabled,
                     Binder.getCallingUid(), Binder.getCallingPid());
         }
+
 
         @Override
         public boolean isPackageAppLockEnabled(String pkgName, int userId) {
@@ -7050,6 +7058,23 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
         }
 
         @Override
+        public GosPackageState getGosPackageState(@NonNull String packageName, int userId) {
+            int callingUid = Binder.getCallingUid();
+            int callingPid = Binder.getCallingPid();
+            return gosPackageStatePmHooks.getFiltered(callingUid, callingPid, packageName, userId);
+        }
+
+        @Override
+        public boolean setGosPackageState(@NonNull String packageName, int userId,
+                                                  @NonNull GosPackageState updatedPs, int editorFlags) {
+            int callingUid = Binder.getCallingUid();
+            int callingPid = Binder.getCallingPid();
+            return gosPackageStatePmHooks.set(callingUid, callingPid, packageName, userId,
+                    updatedPs, editorFlags);
+        }
+
+
+        @Override
         public boolean onTransact(int code, Parcel data, Parcel reply, int flags)
                 throws RemoteException {
             try {
@@ -7709,6 +7734,12 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
                 @Build.SdkIntFull int sdkVersionFull) {
             final boolean isUpgrading = mPriorSdkVersionFull != -1;
             return isUpgrading && (mPriorSdkVersionFull < sdkVersionFull);
+        }
+
+        @NonNull
+        @Override
+        public GosPackageState getGosPackageState(String packageName, int userId) {
+            return gosPackageStatePmHooks.getUnfiltered(packageName, userId);
         }
 
         @Override
@@ -8835,6 +8866,11 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
             }
         }
         return sRestrictedPermissions;
+    }
+
+    @NonNull
+    public Context getContext() {
+        return mContext;
     }
 
     @Nullable

@@ -2001,6 +2001,7 @@ public abstract class PackageManager {
     @IntDef(flag = true, value = {
             DONT_KILL_APP,
             SYNCHRONOUS,
+            SKIP_IF_MISSING,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface EnabledFlags {}
@@ -2012,6 +2013,13 @@ public abstract class PackageManager {
      * since changing component states can make the containing application's behavior unpredictable.
      */
     public static final int DONT_KILL_APP = 0x00000001;
+
+    /**
+     * Skip component state changes when the requested package or component is absent.
+     *
+     * @hide
+     */
+    public static final int SKIP_IF_MISSING = 0x4000_0000;
 
     /**
      * Flag parameter for

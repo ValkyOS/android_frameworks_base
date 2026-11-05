@@ -76,6 +76,7 @@ import com.android.server.pm.pkg.PackageUserState;
 import com.android.server.wm.ActivityTaskManagerInternal;
 
 import dalvik.system.VMRuntime;
+import android.content.pm.GosPackageState;
 
 /**
  * Deletes a package. Uninstall if installed, or at least deletes the base directory if it's called
@@ -624,6 +625,15 @@ final class DeletePackageHelper {
                     ? 0
                     : ps.getUserStateOrDefault(nextUserId).getFirstInstallTimeMillis();
 
+            // Preserve GosPackageState if archiving an app.
+            final GosPackageState gosPackageState;
+            if ((flags & (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE))
+                    == (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE)) {
+                gosPackageState = ps.getUserStateOrDefault(nextUserId).getGosPackageState();
+            } else {
+                gosPackageState = GosPackageState.DEFAULT;
+            }
+
             // Preserve App Lock state in case of DELETE_KEEP_DATA
             final boolean appLockEnablementState = android.security.Flags.appLockApis()
                     && (flags & PackageManager.DELETE_KEEP_DATA) != 0
@@ -639,6 +649,7 @@ final class DeletePackageHelper {
                     true /*stopped*/,
                     true /*notLaunched*/,
                     false /*hidden*/,
+                    gosPackageState,
                     0 /*distractionFlags*/,
                     null /*suspendParams*/,
                     false /*instantApp*/,

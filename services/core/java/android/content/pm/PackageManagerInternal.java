@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
+import android.content.pm.GosPackageState;
 
 /**
  * Package manager local system service interface.
@@ -1508,6 +1509,9 @@ public abstract class PackageManagerInternal {
      */
     public abstract boolean isUpgradingFromLowerThanBySdkVersionFull(
             @Build.SdkIntFull int sdkVersionFull);
+
+    @NonNull
+    public abstract GosPackageState getGosPackageState(String packageName, int userId);
 
     /**
      * Returns the component access policy for a given package, which declares the set of

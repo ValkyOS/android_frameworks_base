@@ -16,6 +16,7 @@
 
 package com.android.server;
 
+import com.android.server.pm.ext.GmsCompatPkgParsingHooks;
 import static android.app.admin.DevicePolicyManager.MULTIUSER_MANAGED_DEVICE_PROVISIONING_STATE_UNMANAGED;
 import static android.app.lskfreset.flags.Flags.enableLskfResetManager;
 import static android.app.privatecompute.flags.Flags.enablePccFrameworkSupport;
@@ -346,6 +347,10 @@ import java.util.Timer;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
+import com.android.internal.pm.pkg.parsing.ParsingPackageUtils;
+import com.android.server.pm.ext.PackageExtInit;
+import com.android.internal.pm.parsing.pkg.PackageImpl;
+import com.android.server.pm.ext.PackageHooksRegistry;
 
 /**
  * Entry point to {@code system_server}.
@@ -728,6 +733,12 @@ public final class SystemServer implements Dumpable {
      */
     public static void main(String[] args) {
         new SystemServer().run();
+    }
+
+    static {
+        PackageImpl.packageParsingHooksSupplier = PackageHooksRegistry::getParsingHooks;
+        ParsingPackageUtils.packageExtInitSupplier = PackageExtInit::new;
+        ParsingPackageUtils.gmsCompatClientServiceSupplier = GmsCompatPkgParsingHooks::maybeCreateClientService;
     }
 
     public SystemServer() {

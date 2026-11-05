@@ -16,6 +16,9 @@
 
 package android.app;
 
+import android.app.compat.gms.GmsCompat;
+import com.android.internal.gmscompat.sysservice.GmcUserManager;
+
 import static android.aiseal.Flags.aisealHostApis;
 import static android.app.appfunctions.flags.Flags.enableAppFunctionManager;
 import static android.app.appfunctions.flags.Flags.enableAppFunctionPermissionV2;
@@ -666,7 +669,17 @@ public final class SystemServiceRegistry {
             @Override
             public InputMethodManager getService(ContextImpl ctx) {
                 return InputMethodManager.forContext(ctx.getOuterContext());
-            }});
+            }
+
+            @Override
+            public void clearCache(ContextImpl ctx) {
+                // clearCache() is expected to be called at an early phase of app process init,
+                // before InputMethodManager is fetched
+                if (!InputMethodManager.isInstanceCacheEmpty()) {
+                    Log.e(TAG, "ignoring clearCache() for INPUT_METHOD_SERVICE");
+                }
+            }
+        });
 
         registerService(Context.TEXT_SERVICES_MANAGER_SERVICE, TextServicesManager.class,
                 new CachedServiceFetcher<TextServicesManager>() {
@@ -1036,6 +1049,11 @@ public final class SystemServiceRegistry {
             public UserManager createService(ContextImpl ctx) throws ServiceNotFoundException {
                 IBinder b = ServiceManager.getServiceOrThrow(Context.USER_SERVICE);
                 IUserManager service = IUserManager.Stub.asInterface(b);
+
+                if (GmsCompat.isEnabled()) {
+                    return new GmcUserManager(ctx, service);
+                }
+
                 return new UserManager(ctx, service);
             }});
 
@@ -2256,6 +2274,15 @@ public final class SystemServiceRegistry {
         return new Object[sServiceCacheSize];
     }
 
+    /** @hide */
+    public static void clearServiceCache(Context ctx) {
+        for (ServiceFetcher fetcher : SYSTEM_SERVICE_FETCHERS.values()) {
+            if (ctx instanceof ContextImpl ctxImpl) {
+                fetcher.clearCache(ctxImpl);
+            }
+        }
+    }
+
     @RavenwoodRedirect
     private static void onUnknownSystemServiceError(String name) {
         if (sEnableServiceNotFoundWtf) {
@@ -2687,6 +2714,7 @@ public final class SystemServiceRegistry {
     @RavenwoodKeepWholeClass
     static abstract interface ServiceFetcher<T> {
         T getService(ContextImpl ctx);
+        void clearCache(ContextImpl ctx);
 
         /**
          * Should this service fetcher support being fetched via {@link #getSystemService(String)},
@@ -2823,6 +2851,15 @@ public final class SystemServiceRegistry {
             return ret;
         }
 
+        @Override
+        public void clearCache(ContextImpl ctx) {
+            final Object[] cache = ctx.mServiceCache;
+            synchronized (cache) {
+                cache[mCacheIndex] = null;
+                ctx.mServiceInitializationStateArray[mCacheIndex] = ContextImpl.STATE_UNINITIALIZED;
+            }
+        }
+
         public abstract T createService(ContextImpl ctx) throws ServiceNotFoundException;
 
         // Services that explicitly use a Context can never be fetched without one.
@@ -2872,6 +2909,13 @@ public final class SystemServiceRegistry {
                     }
                 }
                 return mCachedInstance;
+            }
+        }
+
+        @Override
+        public void clearCache(ContextImpl ctx) {
+            synchronized (StaticServiceFetcher.this) {
+                mCachedInstance = null;
             }
         }
 

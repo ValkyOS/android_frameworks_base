@@ -67,6 +67,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import com.android.internal.pm.parsing.pkg.PackageExtIface;
 
 /**
  * The representation of an application on disk, as parsed from its split APKs' manifests.
@@ -1585,5 +1586,10 @@ public interface AndroidPackage {
      * @hide
      */
     ParsedAllowComponentAccessPolicy getParsedAllowComponentAccessPolicy();
+
+
+    /** @hide */
+    @Immutable.Ignore
+    PackageExtIface ext();
 
 }

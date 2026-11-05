@@ -89,6 +89,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import android.content.pm.GosPackageState;
+import android.content.pm.PackageManagerInternal;
+import com.android.server.LocalServices;
+import com.android.server.pm.pkg.SharedUserApi;
 
 /**
  * Settings data for a particular package we know about.
@@ -449,6 +453,12 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
         }
         onChanged();
         return this;
+    }
+
+    public void setGosPackageState(
+            @UserIdInt int userId, @NonNull GosPackageState state) {
+        modifyUserState(userId).setGosPackageState(state);
+        onChanged();
     }
 
     public PackageSetting setForceQueryableOverride(boolean forceQueryableOverride) {
@@ -980,6 +990,16 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
 
     void setInstalled(boolean inst, int userId) {
         modifyUserState(userId).setInstalled(inst);
+        if (inst) {
+            int sharedUserAppId = getSharedUserAppId();
+            if (sharedUserAppId > 0) {
+                var pmi = LocalServices.getService(PackageManagerInternal.class);
+                SharedUserApi sharedUser = pmi.getSharedUserApi(sharedUserAppId);
+                if (sharedUser != null) {
+                    sharedUser.syncGosPackageState();
+                }
+            }
+        }
         onChanged();
     }
 
@@ -1192,6 +1212,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
     void setUserState(int userId, long ceDataInode, long deDataInode,
                       long pccCeDataInode, long pccDeDataInode, int enabled,
                       boolean installed, boolean stopped, boolean notLaunched, boolean hidden,
+                      GosPackageState gosPackageState,
                       int distractionFlags, ArrayMap<UserPackage, SuspendParams> suspendParams,
                       boolean instantApp, boolean virtualPreload, String lastDisableAppCaller,
                       ArraySet<String> enabledComponents, ArraySet<String> disabledComponents,
@@ -1211,6 +1232,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
                 .setStopped(stopped)
                 .setNotLaunched(notLaunched)
                 .setHidden(hidden)
+                .setGosPackageState(gosPackageState)
                 .setDistractionFlags(distractionFlags)
                 .setLastDisableAppCaller(lastDisableAppCaller)
                 .setEnabledComponents(enabledComponents)
@@ -1234,7 +1256,8 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
         setUserState(userId, otherState.getCeDataInode(), otherState.getDeDataInode(),
                 otherState.getPccCeDataInode(), otherState.getPccDeDataInode(),
                 otherState.getEnabledState(),  otherState.isInstalled(), otherState.isStopped(),
-                otherState.isNotLaunched(), otherState.isHidden(), otherState.getDistractionFlags(),
+                otherState.isNotLaunched(), otherState.isHidden(),
+                otherState.getGosPackageState(), otherState.getDistractionFlags(),
                 otherState.getSuspendParams() == null
                         ? null : otherState.getSuspendParams().untrackedStorage(),
                 otherState.isInstantApp(), otherState.isVirtualPreload(),

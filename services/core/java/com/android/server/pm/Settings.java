@@ -51,6 +51,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.Flags;
+import android.content.pm.GosPackageState;
 import android.content.pm.IntentFilterVerificationInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
@@ -1201,6 +1202,7 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                 true /*stopped*/,
                                 true /*notLaunched*/,
                                 false /*hidden*/,
+                                GosPackageState.DEFAULT,
                                 0 /*distractionFlags*/,
                                 null /*suspendParams*/,
                                 instantApp,
@@ -1958,6 +1960,7 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                     false /*stopped*/,
                                     false /*notLaunched*/,
                                     false /*hidden*/,
+                                    GosPackageState.DEFAULT,
                                     0 /*distractionFlags*/,
                                     null /*suspendParams*/,
                                     false /*instantApp*/,
@@ -2087,6 +2090,12 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                 ATTR_PERSONAL_CONTEXT_MODE,
                                 PackageManager.PERSONAL_CONTEXT_MODE_UNSET);
 
+                        GosPackageState gosPackageState =
+                                GosPackageStatePersistence.maybeDeserializeLegacy(parser);
+                        if (gosPackageState == null) {
+                            gosPackageState = GosPackageState.DEFAULT;
+                        }
+
                         ArraySet<String> enabledComponents = null;
                         ArraySet<String> disabledComponents = null;
                         SuspendDialogInfo oldSuspendDialogInfo = null;
@@ -2135,6 +2144,10 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                 case TAG_ARCHIVE_STATE:
                                     archiveState = parseArchiveState(parser);
                                     break;
+                                case GosPackageStatePersistence.TAG_GOS_PACKAGE_STATE:
+                                    gosPackageState =
+                                            GosPackageStatePersistence.deserialize(parser);
+                                    break;
                                 default:
                                     Slog.wtf(TAG, "Unknown tag " + parser.getName() + " under tag "
                                             + TAG_PACKAGE);
@@ -2162,7 +2175,7 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                         ps.setUserState(
                                 userId, ceDataInode, deDataInode, pccCeDataInode, pccDeDataInode,
                                 enabled, installed, stopped,
-                                notLaunched, hidden, distractionFlags, suspendParamsMap, instantApp,
+                                notLaunched, hidden, gosPackageState, distractionFlags, suspendParamsMap, instantApp,
                                 virtualPreload, enabledCaller, enabledComponents,
                                 disabledComponents, installReason, uninstallReason,
                                 harmfulAppWarning, splashScreenTheme,
@@ -2556,6 +2569,8 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                             serializer.attributeInt(null, ATTR_DISTRACTION_FLAGS,
                                     ustate.getDistractionFlags());
                         }
+                        GosPackageStatePersistence.serialize(ustate, serializer);
+
                         if (ustate.isSuspended()) {
                             serializer.attributeBoolean(null, ATTR_SUSPENDED, true);
                         }

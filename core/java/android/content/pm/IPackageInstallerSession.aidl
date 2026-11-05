@@ -62,6 +62,8 @@ interface IPackageInstallerSession {
     void addChildSessionId(in int sessionId);
     void removeChildSessionId(in int sessionId);
     int getParentSessionId();
+    // ValkyOS: GmsCompat (GrapheneOS), used by PackageInstaller.Session for Play Store
+    int getId();
 
     boolean isStaged();
     int getInstallFlags();

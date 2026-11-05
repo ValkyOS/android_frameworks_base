@@ -22,6 +22,7 @@ import android.content.ComponentName;
 import android.content.pm.PackageManager;
 import android.content.pm.UserPackage;
 import android.content.pm.overlay.OverlayPaths;
+import android.content.pm.GosPackageState;
 import android.util.ArraySet;
 import android.util.Pair;
 
@@ -179,6 +180,12 @@ class PackageUserStateDefault implements PackageUserStateInternal {
     @Override
     public long getFirstInstallTimeMillis() {
         return 0;
+    }
+
+    @NonNull
+    @Override
+    public GosPackageState getGosPackageState() {
+        return GosPackageState.DEFAULT;
     }
 
     @Override
