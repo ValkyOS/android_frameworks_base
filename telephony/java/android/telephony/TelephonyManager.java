@@ -5193,6 +5193,13 @@ public class TelephonyManager {
                     getAttributionTag());
         } catch (RemoteException ex) {
             return null;
+        } catch (SecurityException ex) {
+            // ValkyOS: sandboxed GmsCore lacks READ_PRIVILEGED_PHONE_STATE.
+            // Report "unavailable", like GmsCompatConfig does for getGroupIdLevel1.
+            if (android.app.compat.gms.GmsCompat.isEnabled()) {
+                return null;
+            }
+            throw ex;
         }
     }
 
