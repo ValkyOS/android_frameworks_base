@@ -1019,6 +1019,8 @@ public final class ActivityThread extends ClientTransactionHandler
         @UnsupportedAppUsage
         AppBindData() {
         }
+        // ValkyOS: per-app arguments computed by system_server (GrapheneOS AppBindArgs).
+        Bundle extraArgs;
         @UnsupportedAppUsage
         LoadedApk info;
         @UnsupportedAppUsage
@@ -1425,6 +1427,7 @@ public final class ActivityThread extends ClientTransactionHandler
         @Override
         @RavenwoodThrow(comment = "See ActivityThread_ravenwood for initialization on Ravenwood")
         public final void bindApplication(
+                Bundle extraArgs,
                 String processName,
                 ApplicationInfo appInfo,
                 String sdkSandboxClientAppVolumeUuid,
@@ -1511,6 +1514,7 @@ public final class ActivityThread extends ClientTransactionHandler
             }
 
             AppBindData data = new AppBindData();
+            data.extraArgs = extraArgs;
             data.processName = processName;
             data.appInfo = appInfo;
             data.sdkSandboxClientAppVolumeUuid = sdkSandboxClientAppVolumeUuid;
@@ -2510,6 +2514,11 @@ public final class ActivityThread extends ClientTransactionHandler
             } catch (RemoteException e) {
                 throw e.rethrowFromSystemServer();
             }
+        }
+
+        @Override
+        public void onGosPackageStateChanged() {
+            ActivityThreadHooks.onGosPackageStateChanged(null);
         }
     }
 
@@ -8002,6 +8011,8 @@ public final class ActivityThread extends ClientTransactionHandler
     @UnsupportedAppUsage
     @RavenwoodThrow(comment = "See ActivityThread_ravenwood for initialization on Ravenwood")
     private void handleBindApplication(AppBindData data) {
+        final Bundle extraAppBindArgs = ActivityThreadHooks.onBind(data);
+
         mDdmSyncStageUpdater.next(Stage.Bind);
 
         // Register the UI Thread as a sensitive thread to the runtime.
@@ -8264,6 +8275,8 @@ public final class ActivityThread extends ClientTransactionHandler
             // pages after the growth limit to the non growth limit capacity. b/18387825
             dalvik.system.VMRuntime.getRuntime().clampGrowthLimit();
         }
+
+        ActivityThreadHooks.onBind2(appContext, extraAppBindArgs);
 
         // Allow disk access during application and provider setup. This could
         // block processing ordered broadcasts, but later processing would

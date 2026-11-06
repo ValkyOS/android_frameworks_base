@@ -5449,7 +5449,10 @@ public class ActivityManagerService extends IActivityManager.Stub
                     instrumentationWatcher = instr2.mWatcher;
                     instrumentationUiConnection = instr2.mUiAutomationConnection;
                 }
+                Bundle extraArgs = com.android.server.ext.PackageManagerHooks.getExtraAppBindArgs(
+                        mPackageManagerInt, appInfo.packageName, app.getApplicationUid(), pid);
                 thread.bindApplication(
+                        extraArgs,
                         processName,
                         appInfo,
                         app.sdkSandboxClientAppVolumeUuid,
@@ -19310,6 +19313,13 @@ public class ActivityManagerService extends IActivityManager.Stub
         public boolean hasServiceBindingOrProviderUse(int uid, int clientUid) {
             synchronized (mGlobalLock) {
                 return hasServiceBindingOrProviderUseLocked(uid, clientUid);
+            }
+        }
+
+        @Override
+        public void dispatchGosPackageStateCallbacks(int uid) {
+            synchronized (mGlobalLock) {
+                mProcessList.dispatchGosPackageStateChangedLOSP(uid);
             }
         }
     }
