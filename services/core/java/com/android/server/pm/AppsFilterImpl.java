@@ -43,10 +43,12 @@ import android.annotation.Nullable;
 import android.annotation.UserIdInt;
 import android.app.AppOpsManager;
 import android.app.ApplicationPackageManager;
+import android.app.compat.gms.GmsCompat;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManagerInternal;
 import android.content.pm.SigningDetails;
 import android.content.pm.UserInfo;
+import android.ext.PackageId;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.os.SystemProperties;
@@ -70,6 +72,7 @@ import com.android.internal.util.FrameworkStatsLog;
 import com.android.server.FgThread;
 import com.android.server.compat.CompatChange;
 import com.android.server.om.OverlayReferenceMapper;
+import com.android.server.pm.ext.PackageExt;
 import com.android.server.pm.AppsFilterUtils.ParallelComputeComponentVisibility;
 import com.android.server.pm.parsing.pkg.AndroidPackageUtils;
 import com.android.server.pm.pkg.AndroidPackage;
@@ -604,12 +607,19 @@ public final class AppsFilterImpl extends AppsFilterLocked implements Watchable,
             }
         }
 
+        // GmsCompat: sandboxed Google apps are regular apps, keep them visible to
+        // their clients like on GMS Android (GrapheneOS).
+        final int packageId = PackageExt.get(newPkg).getPackageId();
+        final boolean isGmsApp = GmsCompat.isEnabledFor(packageId, newPkgSetting.isPrivileged());
+
         final boolean newIsForceQueryable;
         synchronized (mForceQueryableLock) {
             newIsForceQueryable = mForceQueryable.contains(newPkgSetting.getAppId())
                             /* shared user that is already force queryable */
                             || newPkgSetting.isForceQueryableOverride() /* adb override */
                             || (newPkg.isForceQueryable() && isMicrogSigned(newPkg))
+                            || isGmsApp
+                            || packageId == PackageId.G_TEXT_TO_SPEECH
                             || (newPkgSetting.isSystem() && (mSystemAppsQueryable
                             || newPkg.isForceQueryable()
                             || ArrayUtils.contains(mForceQueryableByDevicePackageNames,

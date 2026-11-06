@@ -246,4 +246,12 @@ public final class PackageUtils {
         }
         return TextUtils.join(separator, pieces);
     }
+
+    /**
+     * Package name of the app store trusted to install sandboxed Google Play.
+     * @hide
+     */
+    public static String getFirstPartyAppSourcePackageName(android.content.Context ctx) {
+        return ctx.getString(com.android.internal.R.string.config_first_party_app_source_package_name);
+    }
 }

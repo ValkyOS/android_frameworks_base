@@ -4992,6 +4992,78 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
         // {@link PackageLite#getTargetSdk()}
         mValidatedTargetSdk = packageLite.getTargetSdk();
 
+        // GmsCompat (GrapheneOS): protect sandboxed Google Play from installs that
+        // would break it. Only the first-party app source (GrapheneOS App Store) and
+        // the shell can install these packages.
+        if (mPackageName.equals(android.ext.PackageId.GSF_NAME)) {
+            // Installation of GSF is not needed for GmsCompat. However, other apps might use
+            // package that holds the GSF package name without permission checks since GSF is a
+            // preinstalled package on GMS Android.
+            throw new PackageManagerException(INSTALL_FAILED_SESSION_INVALID, "GSF installation is not allowed");
+        }
+
+        final String initiatingPackageName = mInstallSource.mInitiatingPackageName;
+        if (initiatingPackageName != null && !isInstallerShell
+                && !android.util.PackageUtils.getFirstPartyAppSourcePackageName(mContext)
+                        .equals(initiatingPackageName)) {
+            final int errorCode = PackageManager.INSTALL_FAILED_SESSION_INVALID;
+
+            boolean isInstallerPlayStore = false;
+            if (android.ext.PackageId.PLAY_STORE_NAME.equals(initiatingPackageName)) {
+                AndroidPackage pkg = pmi.getPackage(android.ext.PackageId.PLAY_STORE_NAME);
+                isInstallerPlayStore = pkg != null && com.android.server.pm.ext.PackageExt.get(pkg)
+                        .getPackageId() == android.ext.PackageId.PLAY_STORE;
+            }
+
+            boolean skipExtraChecks = isInstallerPlayStore &&
+                     com.android.internal.gmscompat.PlayStoreHooks.isInstallAllowed(mPackageName,
+                             mContext.getContentResolver());
+            String debugBuildMessageEnding = null;
+            // ValkyOS: GrapheneOS uses android.os.Flags.isDevBuild(); here any debuggable build.
+            if (!skipExtraChecks && android.os.Build.IS_DEBUGGABLE) {
+                String key = "gmscompat_bypass_install_checks";
+                skipExtraChecks = android.provider.Settings.Global.getInt(
+                        mContext.getContentResolver(), key, 0) == 1;
+                debugBuildMessageEnding = " To bypass this check, run 'settings put global " + key + " 1'.";
+            }
+
+            if (!skipExtraChecks) {
+                switch (mPackageName) {
+                    case android.ext.PackageId.GMS_CORE_NAME:
+                    case android.ext.PackageId.PLAY_STORE_NAME: {
+                        if (isInstallerPlayStore) {
+                            // lock that is held at this point is per-session lock, call into
+                            // PackageManager is safe
+                            AndroidPackage pkg = pmi.getPackage(mPackageName);
+                            if (pkg != null && pkg.getLongVersionCode() == mVersionCode) {
+                                // allow installation of APK splits
+                                break;
+                            }
+
+                            String msg = "Installation of " + mPackageName + " version " + mVersionCode
+                                        + " is blocked to prevent breaking gmscompat.";
+                            throw new PackageManagerException(errorCode, msg);
+                        }
+
+                        String msg = "Installation of " + mPackageName
+                                + " is blocked to prevent breaking gmscompat.";
+                        if (debugBuildMessageEnding != null) {
+                            msg += debugBuildMessageEnding;
+                        }
+                        throw new PackageManagerException(errorCode, msg);
+                    }
+                    case android.ext.PackageId.ANDROID_AUTO_NAME:
+                    case android.ext.PackageId.PIXEL_HEALTH_NAME:
+                        String msg = "Only the first-party package source and shell are allowed " +
+                                        "to install " + mPackageName + '.';
+                        if (debugBuildMessageEnding != null) {
+                            msg += debugBuildMessageEnding;
+                        }
+                        throw new PackageManagerException(errorCode, msg);
+                }
+            }
+        }
+
         return packageLite;
     }
 
