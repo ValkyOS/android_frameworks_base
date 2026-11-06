@@ -42,6 +42,7 @@ import android.annotation.UserIdInt;
 import android.annotation.WorkerThread;
 import android.app.Notification.Builder;
 import android.app.compat.CompatChanges;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.ChangeId;
 import android.compat.annotation.EnabledSince;
 import android.compat.annotation.UnsupportedAppUsage;
@@ -83,6 +84,7 @@ import android.util.Slog;
 import android.util.proto.ProtoOutputStream;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.internal.gmscompat.GmsCompatApp;
 import com.android.internal.notification.NotificationChannelGroupsHelper;
 import com.android.internal.util.ArrayUtils;
 
@@ -918,6 +920,13 @@ public class NotificationManager {
     public void notifyAsUser(@Nullable String tag, int id, Notification notification,
             @CanBeALL @CanBeCURRENT UserHandle user)
     {
+        if (GmsCompat.isEnabled()) {
+            if (GmsCompat.isGmsCore() && !GmsCompat.hasPermission(android.Manifest.permission.POST_NOTIFICATIONS)) {
+                String pkg = GmsCompat.appContext().getPackageName();
+                GmsCompatApp.voidCall(i -> i.showMissingPostNotifsPermissionNotification(pkg));
+            }
+        }
+
         INotificationManager service = service();
         String pkg = mContext.getPackageName();
         if (discardNotify(user, pkg, tag, id, notification)) {
@@ -2152,6 +2161,12 @@ public class NotificationManager {
      * {@link android.provider.Settings#ACTION_NOTIFICATION_LISTENER_SETTINGS}.
      */
     public boolean isNotificationListenerAccessGranted(ComponentName listener) {
+        if (GmsCompat.isAndroidAuto()) {
+            if (android.ext.PackageId.ANDROID_AUTO_NAME.equals(listener.getPackageName())) {
+                return true;
+            }
+        }
+
         INotificationManager service = service();
         try {
             return service.isNotificationListenerAccessGranted(listener);

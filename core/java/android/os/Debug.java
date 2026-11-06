@@ -20,6 +20,7 @@ import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.AppGlobals;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -2708,6 +2709,23 @@ public final class Debug
         if (service == null) {
             Log.e(TAG, "Can't find service to dump: " + name);
             return false;
+        }
+
+        if (GmsCompat.isEnabled()) {
+            Log.d(TAG, "GmsCompat: dumpService() called for " + name + " service, args: " + java.util.Arrays.toString(args));
+            if ("media_projection".equals(name)) {
+                try (var os = new FileOutputStream(fd)) {
+                    os.write(("""
+                            MEDIA PROJECTION MANAGER (dumpsys media_projection)
+                            Media Projection:\s
+                            null
+                            """).getBytes());
+                    return true;
+                } catch (IOException e) {
+                    Log.e(TAG, "", e);
+                    return false;
+                }
+            }
         }
 
         try {
