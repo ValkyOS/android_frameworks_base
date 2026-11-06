@@ -1566,6 +1566,8 @@ public final class SystemServer implements Dumpable {
         mSystemServiceManager.updateOtherServicesStartIndex();
 
         final Context context = mSystemContext;
+        // ValkyOS: automatic security reboot after eight hours locked.
+        mSystemServiceManager.startService(ValkyAutoRebootService.class);
         DynamicSystemService dynamicSystem = null;
         IStorageManager storageManager = null;
         NetworkManagementService networkManagement = null;
