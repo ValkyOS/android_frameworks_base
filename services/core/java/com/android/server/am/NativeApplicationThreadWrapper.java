@@ -246,6 +246,7 @@ public class NativeApplicationThreadWrapper implements IApplicationThread {
 
     @Override
     public final void bindApplication(
+            Bundle extraArgs,
             String processName,
             ApplicationInfo appInfo,
             String sdkSandboxClientAppVolumeUuid,
@@ -528,4 +529,10 @@ public class NativeApplicationThreadWrapper implements IApplicationThread {
 
     @Override
     public void requestHandoffActivityData(IBinder requestToken, List<IBinder> activityTokens) {}
+
+    @Override
+    public void onGosPackageStateChanged() {
+        // native processes run in isolated UIDs, onGosPackageStateChanged() is never called for them
+        Slog.wtf(TAG, "onGosPackageStateChanged called");
+    }
 }

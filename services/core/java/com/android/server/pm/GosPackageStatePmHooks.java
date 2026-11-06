@@ -180,8 +180,7 @@ public class GosPackageStatePmHooks {
                 // calls to frozen processes are queued until the process is unfrozen. Not passing
                 // the GosPackageState also removes the need to maintain ordering between
                 // concurrent GosPackageState changes.
-                // ActivityThreadHooks, Storage Scopes and Contact Scopes are not part of
-                // the current GmsCompat port, so there is no process callback to dispatch.
+                am.dispatchGosPackageStateCallbacks(uid);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }

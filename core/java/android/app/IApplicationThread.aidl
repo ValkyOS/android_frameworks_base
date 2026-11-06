@@ -83,7 +83,7 @@ oneway interface IApplicationThread {
             in CompatibilityInfo compatInfo, int processState);
     @UnsupportedAppUsage
     void scheduleStopService(IBinder token);
-    void bindApplication(in String packageName, in ApplicationInfo info,
+    void bindApplication(in Bundle extraArgs, in String packageName, in ApplicationInfo info,
             in String sdkSandboxClientAppVolumeUuid, in String sdkSandboxClientAppPackage,
             in boolean isSdkInSandbox,
             in ProviderInfoList providerList, in ComponentName testName,
@@ -191,4 +191,6 @@ oneway interface IApplicationThread {
     void getExecutableMethodFileOffsets(in MethodDescriptor methodDescriptor,
             in IOffsetCallback resultCallback);
     void requestHandoffActivityData(in IBinder requestToken, in List<IBinder> activityTokens);
+    // ValkyOS: GosPackageState of this app changed (GrapheneOS)
+    void onGosPackageStateChanged();
 }

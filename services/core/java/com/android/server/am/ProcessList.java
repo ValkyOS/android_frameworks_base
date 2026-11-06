@@ -3814,6 +3814,27 @@ public final class ProcessList extends ProcessListInternal
         }
     }
 
+    // ValkyOS: GrapheneOS GosPackageState change callbacks
+    @GuardedBy("mService")
+    void dispatchGosPackageStateChangedLOSP(int uid) {
+        for (int i = mLruProcesses.size() - 1; i >= 0; i--) {
+            ProcessRecord r = mLruProcesses.get(i);
+            if (r.uid != uid) {
+                // isolated processes are skipped intentionally (they run in separate UIDs)
+                continue;
+            }
+            final IApplicationThread thread = r.getThread();
+            if (thread != null) {
+                try {
+                    thread.onGosPackageStateChanged();
+                } catch (RemoteException ex) {
+                    Slog.i(TAG, "onGosPackageStateChanged failed; uid " + uid
+                            + ", processName " + r.info.processName, ex);
+                }
+            }
+        }
+    }
+
     @GuardedBy(anyOf = {"mService", "mProcLock"})
     void handleAllTrustStorageUpdateLOSP() {
         for (int i = mLruProcesses.size() - 1; i >= 0; i--) {
