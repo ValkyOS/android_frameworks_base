@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ValkyOS: extra framework configuration (same resource names as GrapheneOS).
+-->
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- App store trusted to install and update sandboxed Google Play
+         (GrapheneOS App Store). Used by PackageInstallerSession. -->
+    <string name="config_first_party_app_source_package_name" translatable="false">app.grapheneos.apps</string>
+    <java-symbol type="string" name="config_first_party_app_source_package_name" />
+</resources>
