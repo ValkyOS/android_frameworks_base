@@ -1070,6 +1070,12 @@ public class ParsingPackageUtils {
             }
         }
 
+        // ValkyOS: every app with code implicitly requests the Sensors permission (GrapheneOS)
+        if (pkg.isDeclaredHavingCode() && !pkg.getUsesPermissionMapping().containsKey(
+                android.Manifest.permission.OTHER_SENSORS)) {
+            pkg.addImplicitPermission(android.Manifest.permission.OTHER_SENSORS);
+        }
+
         convertCompatPermissions(pkg);
 
         convertSplitPermissions(pkg);

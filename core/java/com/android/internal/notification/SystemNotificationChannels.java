@@ -232,6 +232,13 @@ public class SystemNotificationChannels {
                 NotificationManager.IMPORTANCE_LOW);
         channelsList.add(abusiveBackgroundAppsChannel);
 
+        NotificationChannel missingPermission = new NotificationChannel(MISSING_PERMISSION,
+                context.getText(R.string.notification_channel_missing_permission),
+                NotificationManager.IMPORTANCE_HIGH);
+        missingPermission.setSound(null, null);
+        missingPermission.enableVibration(false);
+        channelsList.add(missingPermission);
+
         if (enableSupervisionManagerPolicyApis()) {
             final NotificationChannel parentalControlsChannel =
                     new NotificationChannel(
@@ -279,4 +286,7 @@ public class SystemNotificationChannels {
     }
 
     private SystemNotificationChannels() {}
+
+    // ValkyOS (GrapheneOS): denied special runtime permission notifications
+    public static final String MISSING_PERMISSION = "MISSING_PERMISSION";
 }
