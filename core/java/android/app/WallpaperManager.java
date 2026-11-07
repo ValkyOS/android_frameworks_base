@@ -102,6 +102,7 @@ import android.view.WindowManagerGlobal;
 
 import com.android.internal.R;
 import com.android.internal.annotations.Keep;
+import com.android.internal.app.StorageScopesAppHooks;
 
 import libcore.io.IoUtils;
 
@@ -801,6 +802,11 @@ public class WallpaperManager {
 
                     if (GmsCompat.isEnabled()) {
                         Log.d("GmsCompat", "", e);
+                        return getDefaultWallpaper(context, FLAG_SYSTEM);
+                    }
+
+                    if (StorageScopesAppHooks.isEnabled()) {
+                        Log.d("StorageScopes", "returning default wallpaper");
                         return getDefaultWallpaper(context, FLAG_SYSTEM);
                     }
 
@@ -2016,6 +2022,11 @@ public class WallpaperManager {
 
                 if (GmsCompat.isEnabled()) {
                     Log.d("GmsCompat", "", e);
+                    return getDefaultSystemWallpaperFile();
+                }
+
+                if (StorageScopesAppHooks.isEnabled()) {
+                    Log.d("StorageScopes", "returning default wallpaper file");
                     return getDefaultSystemWallpaperFile();
                 }
 

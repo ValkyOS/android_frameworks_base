@@ -21,6 +21,7 @@ import android.annotation.SystemApi;
 import android.app.compat.gms.GmsCompat;
 
 import com.android.internal.app.ContactScopes;
+import com.android.internal.app.StorageScopesAppHooks;
 import com.android.internal.gmscompat.GmsCompatConfig;
 import com.android.internal.gmscompat.GmsHooks;
 
@@ -35,7 +36,11 @@ public class AppPermissionUtils {
     // android.permission.PermissionManager#checkPermissionUncached
     /** @hide */
     public static boolean shouldSpoofSelfCheck(String permName) {
-        // ValkyOS: Storage Scopes and special runtime permissions are not ported yet.
+        if (StorageScopesAppHooks.shouldSpoofSelfPermissionCheck(permName)) {
+            return true;
+        }
+
+        // ValkyOS: special runtime permissions (SrtPermissions) are not ported yet.
 
         if (ContactScopes.shouldSpoofSelfPermissionCheck(permName)) {
             return true;
@@ -57,6 +62,10 @@ public class AppPermissionUtils {
     // android.app.AppOpsManager#unsafeCheckOpRawNoThrow
     /** @hide */
     public static boolean shouldSpoofSelfAppOpCheck(int op) {
+        if (StorageScopesAppHooks.shouldSpoofSelfAppOpCheck(op)) {
+            return true;
+        }
+
         if (ContactScopes.shouldSpoofSelfAppOpCheck(op)) {
             return true;
         }
@@ -80,6 +89,18 @@ public class AppPermissionUtils {
     }
 
     private static int getSpoofablePermissionDflag(GosPackageState ps, String perm, boolean forRequestDialog) {
+        if (ps.hasFlag(GosPackageStateFlag.STORAGE_SCOPES_ENABLED)) {
+            int permDflag = StorageScopesAppHooks.getSpoofablePermissionDflag(perm);
+            if (permDflag != 0) {
+                if (!forRequestDialog) {
+                    if (StorageScopesAppHooks.shouldSkipPermissionCheckSpoof(ps.derivedFlags, permDflag)) {
+                        return 0;
+                    }
+                }
+                return permDflag;
+            }
+        }
+
         if (ps.hasFlag(GosPackageStateFlag.CONTACT_SCOPES_ENABLED)) {
             int permDflag = ContactScopes.getSpoofablePermissionDflag(perm);
             if (permDflag != 0) {
