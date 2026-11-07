@@ -81,7 +81,8 @@ class ActivityThreadHooks {
                     + ctx.getPackageName() + ": " + state);
         }
         // Features that depend on GosPackageState are enabled here
-        // (Contact Scopes and Storage Scopes, added in later ValkyOS batches).
+        // (Storage Scopes is added in a later ValkyOS batch).
+        com.android.internal.app.ContactScopes.maybeEnable(ctx, state);
     }
 
     @Nullable

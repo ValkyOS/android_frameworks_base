@@ -2993,6 +2993,11 @@ public abstract class ContentResolver implements ContentInterface {
     public void notifyChange(@NonNull Uri uri, @Nullable ContentObserver observer,
             @NotifyFlags int flags) {
         Objects.requireNonNull(uri, "uri");
+
+        if (ContentProviderRedirector.shouldSkipNotifyChange(uri, observer, flags)) {
+            return;
+        }
+
         notifyChange(
                 ContentProvider.getUriWithoutUserId(uri),
                 observer,
@@ -3040,6 +3045,10 @@ public abstract class ContentResolver implements ContentInterface {
         // Cluster based on user ID
         final SparseArray<ArrayList<Uri>> clusteredByUser = new SparseArray<>();
         for (Uri uri : uris) {
+            if (ContentProviderRedirector.shouldSkipNotifyChange(uri, observer, flags)) {
+                continue;
+            }
+
             final int userId = ContentProvider.getUserIdFromUri(uri, mContext.getUserId());
             ArrayList<Uri> list = clusteredByUser.get(userId);
             if (list == null) {

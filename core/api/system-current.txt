@@ -4526,6 +4526,7 @@ package android.content {
     method public abstract android.content.Context createCredentialProtectedStorageContext();
     method @NonNull public android.content.Context createPackageContextAsUser(@NonNull String, int, @NonNull android.os.UserHandle) throws android.content.pm.PackageManager.NameNotFoundException;
     method @Nullable public abstract java.io.File getPreloadsFileCache();
+    method @NonNull public android.os.UserHandle getUser();
     method public abstract boolean isCredentialProtectedStorage();
     method @Nullable @RequiresPermission(android.Manifest.permission.INTERACT_ACROSS_USERS_FULL) public android.content.Intent registerReceiverForAllUsers(@Nullable android.content.BroadcastReceiver, @NonNull android.content.IntentFilter, @Nullable String, @Nullable android.os.Handler);
     method @Nullable @RequiresPermission(android.Manifest.permission.INTERACT_ACROSS_USERS_FULL) public android.content.Intent registerReceiverForAllUsers(@Nullable android.content.BroadcastReceiver, @NonNull android.content.IntentFilter, @Nullable String, @Nullable android.os.Handler, int);
@@ -4775,6 +4776,11 @@ package android.content.om {
 }
 
 package android.content.pm {
+
+  public class AppPermissionUtils {
+    method public static boolean shouldSkipPermissionRequestDialog(@NonNull android.content.pm.GosPackageState, @NonNull String);
+    method public static boolean shouldSpoofPermissionRequestResult(@NonNull android.content.pm.GosPackageState, @NonNull String);
+  }
 
   public class ApplicationInfo extends android.content.pm.PackageItemInfo implements android.os.Parcelable {
     method @NonNull public android.ext.AppInfoExt ext();
@@ -5827,6 +5833,60 @@ package android.ext {
     field public static final int TYCHO = 11; // 0xb
     field public static final String TYCHO_NAME = "com.google.android.apps.tycho";
     field public static final int UNKNOWN = 0; // 0x0
+  }
+
+}
+
+package android.ext.cscopes {
+
+  public final class ContactScope implements android.os.Parcelable {
+    ctor public ContactScope(int, long, @Nullable String, @Nullable String, @Nullable android.net.Uri);
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.ext.cscopes.ContactScope> CREATOR;
+    field public static final int TYPE_CONTACT = 1; // 0x1
+    field public static final int TYPE_COUNT = 4; // 0x4
+    field public static final int TYPE_EMAIL = 3; // 0x3
+    field public static final int TYPE_GROUP = 0; // 0x0
+    field public static final int TYPE_NUMBER = 2; // 0x2
+    field @Nullable public final android.net.Uri detailsUri;
+    field public final long id;
+    field @Nullable public final String summary;
+    field @Nullable public final String title;
+    field public final int type;
+  }
+
+  public class ContactScopesApi {
+    method @NonNull public static android.content.Intent createConfigActivityIntent(@NonNull String);
+    field public static final String ACTION_NOTIFY_CONTENT_OBSERVERS = "android.ext.cscopes.action.NOTIFY_CONTENT_OBSERVERS";
+    field public static final String KEY_IDS = "ids";
+    field public static final String KEY_RESULT = "result";
+    field public static final String KEY_URIS = "uris";
+    field public static final String METHOD_GET_GROUPS = "get_groups";
+    field public static final String METHOD_GET_IDS_FROM_URIS = "get_ids_from_uris";
+    field public static final String METHOD_GET_VIEW_MODEL = "get_view_model";
+    field public static final String SCOPED_CONTACTS_PROVIDER_AUTHORITY = "com.android.contacts.scoped";
+  }
+
+  public final class ContactScopesStorage {
+    method public boolean add(int, long);
+    method @NonNull public static android.ext.cscopes.ContactScopesStorage deserialize(@NonNull android.content.pm.GosPackageState);
+    method public int getCount();
+    method @NonNull public long[] getIds(int);
+    method public static boolean isEmpty(@NonNull android.content.pm.GosPackageState);
+    method public boolean remove(int, long);
+    method @Nullable public byte[] serialize();
+    field public static final int MAX_COUNT_PER_PACKAGE = 100; // 0x64
+  }
+
+  public final class ContactsGroup implements android.os.Parcelable {
+    ctor public ContactsGroup(long, @Nullable String, @Nullable String);
+    method public int describeContents();
+    method public void writeToParcel(@NonNull android.os.Parcel, int);
+    field @NonNull public static final android.os.Parcelable.Creator<android.ext.cscopes.ContactsGroup> CREATOR;
+    field public final long id;
+    field @Nullable public final String summary;
+    field @Nullable public final String title;
   }
 
 }
