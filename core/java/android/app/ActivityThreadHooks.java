@@ -13,6 +13,8 @@ import android.os.Bundle;
 import android.os.Process;
 import android.util.Log;
 
+import com.android.internal.app.StorageScopesAppHooks;
+
 /**
  * App-side hooks called by ActivityThread. They deliver the GosPackageState of the app
  * (per-app privacy settings) to the features that need it, both when the app starts and
@@ -81,7 +83,7 @@ class ActivityThreadHooks {
                     + ctx.getPackageName() + ": " + state);
         }
         // Features that depend on GosPackageState are enabled here
-        // (Storage Scopes is added in a later ValkyOS batch).
+        StorageScopesAppHooks.maybeEnable(state);
         com.android.internal.app.ContactScopes.maybeEnable(ctx, state);
     }
 
