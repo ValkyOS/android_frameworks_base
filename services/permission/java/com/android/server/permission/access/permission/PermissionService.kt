@@ -73,6 +73,7 @@ import com.android.server.PermissionThread
 import com.android.server.ServiceThread
 import com.android.server.SystemConfig
 import com.android.server.companion.virtual.VirtualDeviceManagerInternal
+import com.android.server.ext.PackageManagerHooks
 import com.android.server.permission.PermissionBpfMap
 import com.android.server.permission.access.AccessCheckingService
 import com.android.server.permission.access.AccessState
@@ -97,6 +98,8 @@ import com.android.server.pm.PackageManagerService
 import com.android.server.pm.PackageMetrics
 import com.android.server.pm.UserManagerInternal
 import com.android.server.pm.UserManagerService
+import com.android.server.pm.ext.PackageExt
+import com.android.server.pm.ext.PackageHooks
 import com.android.server.pm.permission.LegacyPermission
 import com.android.server.pm.permission.LegacyPermissionSettings
 import com.android.server.pm.permission.LegacyPermissionState
@@ -913,6 +916,18 @@ class PermissionService(private val service: AccessCheckingService) :
             context.checkCallingOrSelfPermission(
                 Manifest.permission.ADJUST_RUNTIME_PERMISSIONS_POLICY
             ) == PackageManager.PERMISSION_GRANTED
+
+        if (isGranted) {
+            if (PackageManagerHooks.shouldBlockGrantRuntimePermission(packageManagerInternal,
+                    permissionName, packageName, userId)) {
+                return
+            }
+        } else {
+            if (PackageExt.get(androidPackage).hooks().overridePermissionState(
+                    permissionName, userId) == PackageHooks.PERMISSION_OVERRIDE_GRANT) {
+                throw IllegalArgumentException("$permissionName is granted by PackageHooks for $packageName")
+            }
+        }
 
         service.mutateState {
             with(onPermissionFlagsChangedListener) {

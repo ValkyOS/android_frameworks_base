@@ -9,11 +9,13 @@ package com.android.server.ext;
 import android.annotation.Nullable;
 import android.app.AppBindArgs;
 import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.content.pm.PackageManagerInternal;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.util.Slog;
 
+import com.android.internal.app.ContactScopes;
 import com.android.server.pm.Computer;
 import com.android.server.pm.GosPackageStatePmHooks;
 import com.android.server.pm.pkg.PackageStateInternal;
@@ -23,6 +25,26 @@ public final class PackageManagerHooks {
     private static final String TAG = "AppBindArgs";
 
     private PackageManagerHooks() {}
+
+    /**
+     * Contact Scopes: the real contacts permissions must not be granted while the app uses
+     * Contact Scopes (the app sees them as granted through permission check spoofing).
+     */
+    public static boolean shouldBlockGrantRuntimePermission(
+            PackageManagerInternal pm, String permName, String packageName, int userId)
+    {
+        if (ContactScopes.getSpoofablePermissionDflag(permName) != 0) {
+            GosPackageState gosPs = pm.getGosPackageState(packageName, userId);
+            if (gosPs.hasFlag(GosPackageStateFlag.CONTACT_SCOPES_ENABLED)) {
+                String msg = "refusing to grant " + permName + " to " + packageName +
+                        ": Contact Scopes is enabled";
+                Slog.d("PermissionManager", msg);
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     /**
      * Per-app arguments passed to the app process in IApplicationThread.bindApplication().
