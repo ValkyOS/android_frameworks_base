@@ -106,6 +106,8 @@ import com.android.server.pm.permission.LegacyPermissionState
 import com.android.server.pm.permission.Permission as LegacyPermission2
 import com.android.server.pm.permission.PermissionManagerServiceInterface
 import com.android.server.pm.permission.PermissionManagerServiceInternal
+import com.android.server.pm.permission.SpecialRuntimePermUtils
+import com.android.server.pm.permission.SpecialRuntimePermUtils.isSpecialRuntimePermission
 import com.android.server.pm.pkg.AndroidPackage
 import com.android.server.pm.pkg.PackageState
 import com.android.server.privatecompute.PrivateComputeStatsLogUtil
@@ -1059,7 +1061,8 @@ class PermissionService(private val service: AccessCheckingService) :
                 }
             }
             permission.isRuntime -> {
-                if (androidPackage.targetSdkVersion < Build.VERSION_CODES.M) {
+                if (androidPackage.targetSdkVersion < Build.VERSION_CODES.M
+                        && !isSpecialRuntimePermission(permissionName)) {
                     // If a permission review is required for legacy apps we represent
                     // their permissions as always granted
                     return
@@ -2460,6 +2463,57 @@ class PermissionService(private val service: AccessCheckingService) :
         virtualDeviceManagerInternal?.registerPersistentDeviceIdRemovedListener { deviceId ->
             service.mutateState { with(devicePolicy) { onDeviceIdRemoved(deviceId) } }
         }
+
+        maybeGrantOtherSensorsToExistingApps()
+    }
+
+    /**
+     * ValkyOS: one-time migration for the Sensors (OTHER_SENSORS) permission. Apps that were
+     * installed before ValkyOS had this permission keep sensor access, the same default that new
+     * apps get at install time. Apps where the user already chose a state are not touched. Never
+     * throws: a failure here must not break boot.
+     */
+    private fun maybeGrantOtherSensorsToExistingApps() {
+        val doneKey = "valkyos_other_sensors_migrated"
+        try {
+            val cr = context.contentResolver
+            if (Settings.Global.getInt(cr, doneKey, 0) != 0) {
+                return
+            }
+            val perm = Manifest.permission.OTHER_SENSORS
+            val deviceId = VirtualDeviceManager.PERSISTENT_DEVICE_ID_DEFAULT
+            val skipMask = PackageManager.FLAG_PERMISSION_USER_SET or
+                PackageManager.FLAG_PERMISSION_USER_FIXED or
+                PackageManager.FLAG_PERMISSION_POLICY_FIXED or
+                PackageManager.FLAG_PERMISSION_SYSTEM_FIXED
+            val packageStates = packageManagerLocal.withUnfilteredSnapshot().use { it.packageStates }
+            var granted = 0
+            userManagerService.userIdsIncludingPreCreated.forEach { userId ->
+                packageStates.forEach { (packageName, packageState) ->
+                    val androidPackage = packageState.androidPackage ?: return@forEach
+                    if (perm !in androidPackage.requestedPermissions) {
+                        return@forEach
+                    }
+                    if (!packageState.getUserStateOrDefault(userId).isInstalled) {
+                        return@forEach
+                    }
+                    try {
+                        val flags = getPermissionFlags(packageName, perm, deviceId, userId)
+                        if ((flags and skipMask) != 0) {
+                            return@forEach
+                        }
+                        grantRuntimePermission(packageName, perm, deviceId, userId)
+                        granted++
+                    } catch (e: Exception) {
+                        Slog.w(LOG_TAG, "OTHER_SENSORS migration failed for $packageName u$userId", e)
+                    }
+                }
+            }
+            Settings.Global.putInt(cr, doneKey, 1)
+            Slog.i(LOG_TAG, "OTHER_SENSORS migration done, granted: $granted")
+        } catch (e: Exception) {
+            Slog.e(LOG_TAG, "OTHER_SENSORS migration failed", e)
+        }
     }
 
     override fun onUserCreated(userId: Int) {
@@ -2562,7 +2616,17 @@ class PermissionService(private val service: AccessCheckingService) :
                 params.allowlistedRestrictedPermissions,
                 userId,
             )
-            setRequestedPermissionStates(packageState, userId, params.permissionStates)
+            val permissionStates = ArrayMap(params.permissionStates)
+            if (params.isNewlyInstalledInUserId(userId)) {
+                SpecialRuntimePermUtils.getAll().forEach { perm ->
+                    if (!permissionStates.contains(perm)) {
+                        if (SpecialRuntimePermUtils.shouldAutoGrant(context, androidPackage.packageName, userId, perm)) {
+                            permissionStates.set(perm, PackageInstaller.SessionParams.PERMISSION_STATE_GRANTED)
+                        }
+                    }
+                }
+            }
+            setRequestedPermissionStates(packageState, userId, permissionStates)
         }
     }
 

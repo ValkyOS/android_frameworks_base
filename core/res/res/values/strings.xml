@@ -1107,6 +1107,11 @@
     <!-- Description of a category of application permissions, listed so the user can choose whether they want to allow the application to do this. [CHAR LIMIT=NONE]-->
     <string name="permgroupdesc_xr_tracking_sensitive">precisely scan area and track head</string>
 
+    <!-- Title of a category of application permissions, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permgrouplab_otherSensors">Sensors</string>
+    <!-- Description of a category of application permissions, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permgroupdesc_otherSensors">access sensor data about orientation, movement, etc.</string>
+
     <!-- Title for the capability of an accessibility service to retrieve window content. -->
     <string name="capability_title_canRetrieveWindowContent">Retrieve window content</string>
     <!-- Description for the capability of an accessibility service to retrieve window content. -->
@@ -1535,6 +1540,11 @@
     <string name="permlab_bodySensors_background">Access body sensor data, like heart rate, while in the background</string>
     <!-- Description of the background body sensors permission, listed so the user can decide whether to allow the application to access data from body sensors in the background. [CHAR LIMIT=NONE] -->
     <string name="permdesc_bodySensors_background" product="default">Allows the app to access body sensor data, such as heart rate, temperature, and blood oxygen percentage, while the app is in the background.</string>
+
+    <!-- Title of the sensors permission, listed so the user can decide whether to allow the application to access sensor data. [CHAR LIMIT=80] -->
+    <string name="permlab_otherSensors">access sensors (like the compass)</string>
+    <!-- Description of the sensors permission, listed so the user can decide whether to allow the application to access data from sensors. [CHAR LIMIT=NONE] -->
+    <string name="permdesc_otherSensors" product="default">Allows the app to access data from sensors monitoring orientation, movement, vibration (including low frequency sound) and environmental data</string>
 
     <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
     <string name="permlab_readCalendar">Read calendar events and details</string>
@@ -7286,6 +7296,16 @@
     <string name="fingerprint_frr_notification_msg">Tap to review tips to improve your unlocking experience</string>
 
     <!-- Label describing no blinking for Settings.Secure.ACCESSIBILITY_TEXT_CURSOR_BLINK_INTERVAL_MS. -->
+    <!-- ValkyOS: notification for denied Sensors permission (GrapheneOS) -->
+    <string name="notification_action_dont_show_again">Don’t show again</string>
+    <java-symbol type="string" name="notification_action_dont_show_again" />
+    <string name="notification_channel_missing_permission">Missing permission</string>
+    <java-symbol type="string" name="notification_channel_missing_permission" />
+    <string name="missing_sensors_permission_title">%1$s tried to access sensors</string>
+    <java-symbol type="string" name="missing_sensors_permission_title" />
+    <string name="missing_sensors_permission_message">Tap to ask for permission.</string>
+    <java-symbol type="string" name="missing_sensors_permission_message" />
+
     <string name="no_blink_accessibility_text_cursor_blink_label">Don\'t blink</string>
 
     <!-- Toast message that is shown when dream is triggered by short press power button. [CHAR LIMIT=TOAST] -->
