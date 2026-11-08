@@ -583,6 +583,18 @@ KotlinKeyword: android.app.Notification#when:
     Avoid field names that are Kotlin hard keywords ("when"); see https://android.github.io/kotlin-guides/interop.html#no-hard-keywords
 
 
+KotlinOperator: android.ext.settings.BoolSetting#get(android.content.Context):
+    Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
+KotlinOperator: android.ext.settings.BoolSetting#get(android.content.Context, int):
+    Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
+KotlinOperator: android.ext.settings.IntSetting#get(android.content.Context):
+    Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
+KotlinOperator: android.ext.settings.IntSetting#get(android.content.Context, int):
+    Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
+KotlinOperator: android.ext.settings.StringSetting#get(android.content.Context):
+    Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
+KotlinOperator: android.ext.settings.StringSetting#get(android.content.Context, int):
+    Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
 KotlinOperator: android.hardware.camera2.extension.CharacteristicsMap#get(String):
     Method can be invoked with an indexing operator from Kotlin: `get` (this is usually desirable; just make sure it makes sense for this type of object)
 
@@ -2025,6 +2037,10 @@ Todo: android.telephony.TelephonyManager#getCurrentPhoneType():
     Documentation mentions 'TODO'
 
 
+TypeParameterName: android.ext.settings.Setting:
+    Invalid type parameter name "SelfType". Type parameter names must follow the Google naming guidelines specified here: https://developer.android.com/kotlin/style-guide#type_variable_names
+
+
 UnexportedFlaggedApi: android.R.attr#userSelectable:
     @FlaggedApi flag android.service.dreams.user_selectable_metadata is not exported
 UnexportedFlaggedApi: android.credentials.selection.AuthenticationEntry:
@@ -2449,6 +2465,106 @@ UnflaggedApi: android.ext.cscopes.ContactsGroup#title:
     New API must be flagged with @FlaggedApi: field android.ext.cscopes.ContactsGroup.title
 UnflaggedApi: android.ext.cscopes.ContactsGroup#writeToParcel(android.os.Parcel, int):
     New API must be flagged with @FlaggedApi: method android.ext.cscopes.ContactsGroup.writeToParcel(android.os.Parcel,int)
+UnflaggedApi: android.ext.settings.BoolSetting:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.BoolSetting
+UnflaggedApi: android.ext.settings.BoolSetting#BoolSetting(android.ext.settings.Setting.Scope, String, boolean):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSetting(android.ext.settings.Setting.Scope,String,boolean)
+UnflaggedApi: android.ext.settings.BoolSetting#BoolSetting(android.ext.settings.Setting.Scope, String, java.util.function.Function<android.content.Context,java.lang.Boolean>):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSetting(android.ext.settings.Setting.Scope,String,java.util.function.Function<android.content.Context,java.lang.Boolean>)
+UnflaggedApi: android.ext.settings.BoolSetting#get(android.content.Context):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSetting.get(android.content.Context)
+UnflaggedApi: android.ext.settings.BoolSetting#get(android.content.Context, int):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSetting.get(android.content.Context,int)
+UnflaggedApi: android.ext.settings.BoolSetting#put(android.content.Context, boolean):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSetting.put(android.content.Context,boolean)
+UnflaggedApi: android.ext.settings.BoolSysProperty:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.BoolSysProperty
+UnflaggedApi: android.ext.settings.BoolSysProperty#BoolSysProperty(String, boolean):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSysProperty(String,boolean)
+UnflaggedApi: android.ext.settings.BoolSysProperty#BoolSysProperty(String, java.util.function.Function<android.content.Context,java.lang.Boolean>):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.BoolSysProperty(String,java.util.function.Function<android.content.Context,java.lang.Boolean>)
+UnflaggedApi: android.ext.settings.BoolSysProperty#get():
+    New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSysProperty.get()
+UnflaggedApi: android.ext.settings.BoolSysProperty#put(boolean):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.BoolSysProperty.put(boolean)
+UnflaggedApi: android.ext.settings.IntSetting:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.IntSetting
+UnflaggedApi: android.ext.settings.IntSetting#IntSetting(android.ext.settings.Setting.Scope, String, int):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,int)
+UnflaggedApi: android.ext.settings.IntSetting#IntSetting(android.ext.settings.Setting.Scope, String, int, int...):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,int,int...)
+UnflaggedApi: android.ext.settings.IntSetting#IntSetting(android.ext.settings.Setting.Scope, String, java.util.function.ToIntFunction<android.content.Context>):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,java.util.function.ToIntFunction<android.content.Context>)
+UnflaggedApi: android.ext.settings.IntSetting#IntSetting(android.ext.settings.Setting.Scope, String, java.util.function.ToIntFunction<android.content.Context>, int...):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSetting(android.ext.settings.Setting.Scope,String,java.util.function.ToIntFunction<android.content.Context>,int...)
+UnflaggedApi: android.ext.settings.IntSetting#get(android.content.Context):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.get(android.content.Context)
+UnflaggedApi: android.ext.settings.IntSetting#get(android.content.Context, int):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.get(android.content.Context,int)
+UnflaggedApi: android.ext.settings.IntSetting#put(android.content.Context, int):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.put(android.content.Context,int)
+UnflaggedApi: android.ext.settings.IntSetting#validateValue(int):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.IntSetting.validateValue(int)
+UnflaggedApi: android.ext.settings.IntSysProperty:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.IntSysProperty
+UnflaggedApi: android.ext.settings.IntSysProperty#IntSysProperty(String, int):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,int)
+UnflaggedApi: android.ext.settings.IntSysProperty#IntSysProperty(String, int, int...):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,int,int...)
+UnflaggedApi: android.ext.settings.IntSysProperty#IntSysProperty(String, java.util.function.ToIntFunction<android.content.Context>):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,java.util.function.ToIntFunction<android.content.Context>)
+UnflaggedApi: android.ext.settings.IntSysProperty#IntSysProperty(String, java.util.function.ToIntFunction<android.content.Context>, int...):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.IntSysProperty(String,java.util.function.ToIntFunction<android.content.Context>,int...)
+UnflaggedApi: android.ext.settings.IntSysProperty#get():
+    New API must be flagged with @FlaggedApi: method android.ext.settings.IntSysProperty.get()
+UnflaggedApi: android.ext.settings.IntSysProperty#put(int):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.IntSysProperty.put(int)
+UnflaggedApi: android.ext.settings.Setting:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.Setting
+UnflaggedApi: android.ext.settings.Setting#canObserveState():
+    New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.canObserveState()
+UnflaggedApi: android.ext.settings.Setting#getKey():
+    New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.getKey()
+UnflaggedApi: android.ext.settings.Setting#getScope():
+    New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.getScope()
+UnflaggedApi: android.ext.settings.Setting#registerObserver(android.content.Context, android.os.Handler, java.util.function.Consumer<SelfType>):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.registerObserver(android.content.Context,android.os.Handler,java.util.function.Consumer<SelfType>)
+UnflaggedApi: android.ext.settings.Setting#registerObserver(android.content.Context, int, android.os.Handler, java.util.function.Consumer<SelfType>):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.registerObserver(android.content.Context,int,android.os.Handler,java.util.function.Consumer<SelfType>)
+UnflaggedApi: android.ext.settings.Setting#unregisterObserver(android.content.Context, Object):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.Setting.unregisterObserver(android.content.Context,Object)
+UnflaggedApi: android.ext.settings.Setting.Scope:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.Setting.Scope
+UnflaggedApi: android.ext.settings.Setting.Scope#GLOBAL:
+    New API must be flagged with @FlaggedApi: enum constant android.ext.settings.Setting.Scope.GLOBAL
+UnflaggedApi: android.ext.settings.Setting.Scope#PER_USER:
+    New API must be flagged with @FlaggedApi: enum constant android.ext.settings.Setting.Scope.PER_USER
+UnflaggedApi: android.ext.settings.Setting.Scope#SYSTEM_PROPERTY:
+    New API must be flagged with @FlaggedApi: enum constant android.ext.settings.Setting.Scope.SYSTEM_PROPERTY
+UnflaggedApi: android.ext.settings.StringSetting:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.StringSetting
+UnflaggedApi: android.ext.settings.StringSetting#StringSetting(android.ext.settings.Setting.Scope, String, String):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSetting(android.ext.settings.Setting.Scope,String,String)
+UnflaggedApi: android.ext.settings.StringSetting#StringSetting(android.ext.settings.Setting.Scope, String, java.util.function.Function<android.content.Context,java.lang.String>):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSetting(android.ext.settings.Setting.Scope,String,java.util.function.Function<android.content.Context,java.lang.String>)
+UnflaggedApi: android.ext.settings.StringSetting#get(android.content.Context):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.get(android.content.Context)
+UnflaggedApi: android.ext.settings.StringSetting#get(android.content.Context, int):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.get(android.content.Context,int)
+UnflaggedApi: android.ext.settings.StringSetting#put(android.content.Context, String):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.put(android.content.Context,String)
+UnflaggedApi: android.ext.settings.StringSetting#validateValue(String):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.StringSetting.validateValue(String)
+UnflaggedApi: android.ext.settings.StringSysProperty:
+    New API must be flagged with @FlaggedApi: class android.ext.settings.StringSysProperty
+UnflaggedApi: android.ext.settings.StringSysProperty#StringSysProperty(String, String):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSysProperty(String,String)
+UnflaggedApi: android.ext.settings.StringSysProperty#StringSysProperty(String, java.util.function.Function<android.content.Context,java.lang.String>):
+    New API must be flagged with @FlaggedApi: constructor android.ext.settings.StringSysProperty(String,java.util.function.Function<android.content.Context,java.lang.String>)
+UnflaggedApi: android.ext.settings.StringSysProperty#get():
+    New API must be flagged with @FlaggedApi: method android.ext.settings.StringSysProperty.get()
+UnflaggedApi: android.ext.settings.StringSysProperty#put(String):
+    New API must be flagged with @FlaggedApi: method android.ext.settings.StringSysProperty.put(String)
 UnflaggedApi: android.media.audiopolicy.AudioMix#CREATOR:
     New API must be flagged with @FlaggedApi: field android.media.audiopolicy.AudioMix.CREATOR
 UnflaggedApi: android.media.audiopolicy.AudioMix#describeContents():
