@@ -19,6 +19,7 @@ package com.android.server.location.gnss;
 import android.content.Context;
 import android.os.PersistableBundle;
 import android.os.SystemProperties;
+import android.provider.Settings;
 import android.telephony.CarrierConfigManager;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -52,6 +53,14 @@ import java.util.Properties;
  */
 public class GnssConfiguration {
     private static final String TAG = "GnssConfiguration";
+
+    /**
+     * ValkyOS: which SUPL server assisted GPS uses (Settings.Global, int).
+     * 0 = GrapheneOS proxy (supl.grapheneos.org, default), 1 = standard server.
+     */
+    public static final String SETTING_SUPL_SERVER = "valkyos_supl_server";
+    public static final int SUPL_SERVER_GRAPHENEOS_PROXY = 0;
+    public static final int SUPL_SERVER_STANDARD = 1;
 
     private static final boolean DEBUG = Log.isLoggable(TAG, Log.DEBUG);
 
@@ -294,6 +303,7 @@ public class GnssConfiguration {
          */
         loadPropertiesFromGpsDebugConfig(mProperties, DEBUG_PROPERTIES_VENDOR_FILE);
         loadPropertiesFromGpsDebugConfig(mProperties, DEBUG_PROPERTIES_SYSTEM_FILE);
+        applySuplServerOverride();
         mEsExtensionSec = getRangeCheckedConfigEsExtensionSec();
 
         logConfigurations();
@@ -512,4 +522,17 @@ public class GnssConfiguration {
     private static native boolean native_set_satellite_blocklist(int[] constellations, int[] svIds);
 
     private static native boolean native_set_es_extension_sec(int emergencyExtensionSeconds);
+
+    /** ValkyOS: send SUPL through the GrapheneOS proxy unless the standard server is chosen. */
+    private void applySuplServerOverride() {
+        final int mode = Settings.Global.getInt(mContext.getContentResolver(),
+                SETTING_SUPL_SERVER, SUPL_SERVER_GRAPHENEOS_PROXY);
+        if (mode == SUPL_SERVER_STANDARD) {
+            Log.d(TAG, "SUPL: using the standard server");
+            return;
+        }
+        Log.d(TAG, "SUPL: using the GrapheneOS proxy");
+        mProperties.setProperty(CONFIG_SUPL_HOST, "supl.grapheneos.org");
+        mProperties.setProperty(CONFIG_SUPL_PORT, "7275");
+    }
 }

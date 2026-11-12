@@ -529,6 +529,18 @@ public class GnssLocationProvider extends AbstractLocationProvider implements
                     }
                 }, UserHandle.USER_ALL);
 
+        // ValkyOS: reload the SUPL server when the setting changes.
+        mContext.getContentResolver().registerContentObserver(
+                Settings.Global.getUriFor(GnssConfiguration.SETTING_SUPL_SERVER),
+                false,
+                new ContentObserver(mHandler) {
+                    @Override
+                    public void onChange(boolean selfChange) {
+                        Log.d(TAG, "SUPL server setting changed");
+                        reloadGpsProperties();
+                    }
+                }, UserHandle.USER_ALL);
+
         mHandler.post(this::handleInitialize);
         mHandler.post(mGnssSatelliteBlocklistHelper::updateSatelliteBlocklist);
     }
