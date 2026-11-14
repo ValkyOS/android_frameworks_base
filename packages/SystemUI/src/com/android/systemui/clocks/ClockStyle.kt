@@ -174,7 +174,7 @@ class ClockStyle @JvmOverloads constructor(
     override fun onTuningChanged(key: String?, newValue: String?) {
         when (key) {
             CLOCK_STYLE_KEY -> {
-                clockStyle = TunerService.parseInteger(newValue, DEFAULT_STYLE)
+                clockStyle = parseInteger(newValue, DEFAULT_STYLE)
                 if (clockStyle != 0) {
                     Settings.Secure.putIntForUser(
                         context.contentResolver,
@@ -190,26 +190,26 @@ class ClockStyle @JvmOverloads constructor(
                 applyClockColors()
             }
             CLOCK_CUSTOM_COLOR_KEY -> {
-                customColor = TunerService.parseInteger(newValue, DEFAULT_CUSTOM_COLOR)
+                customColor = parseInteger(newValue, DEFAULT_CUSTOM_COLOR)
                 if (colorMode == COLOR_MODE_CUSTOM) applyClockColors()
             }
             CLOCK_TEXT_OPACITY_KEY -> {
-                clockOpacity = TunerService.parseInteger(newValue, DEFAULT_OPACITY)
+                clockOpacity = parseInteger(newValue, DEFAULT_OPACITY)
                     .coerceIn(0, 100)
                 applyClockAlpha()
             }
             CLOCK_FRAME_MARGIN_TOP_KEY -> {
-                clockFrameMarginTop = TunerService.parseInteger(newValue, DEFAULT_MARGIN_TOP)
+                clockFrameMarginTop = parseInteger(newValue, DEFAULT_MARGIN_TOP)
                     .coerceIn(0, 100)
                 updateClockFrameMargin()
             }
             CLOCK_SIZE_KEY -> {
-                clockSizeScale = TunerService.parseInteger(newValue, DEFAULT_CLOCK_SIZE)
+                clockSizeScale = parseInteger(newValue, DEFAULT_CLOCK_SIZE)
                     .coerceIn(MIN_CLOCK_SIZE, MAX_CLOCK_SIZE)
                 applyClockScale()
             }
             CLOCK_AOD_ANIM_KEY -> {
-                aodAnimEnabled = TunerService.parseInteger(newValue, 1) != 0
+                aodAnimEnabled = parseInteger(newValue, 1) != 0
             }
         }
     }
@@ -589,6 +589,9 @@ class ClockStyle @JvmOverloads constructor(
         const val COLOR_MODE_CUSTOM = "custom"
 
         private const val DOZE_PULSE_ACTION = "com.android.systemui.doze.pulse"
+
+        private fun parseInteger(value: String?, defaultValue: Int): Int =
+            value?.toIntOrNull() ?: defaultValue
 
         private const val DEFAULT_STYLE = 0
         private const val DEFAULT_OPACITY = 100
