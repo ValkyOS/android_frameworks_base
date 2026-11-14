@@ -16,6 +16,12 @@
 package com.android.systemui.keyguard.ui.view.layout.sections
 
 import android.content.Context
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
+import android.os.Process
+import android.provider.Settings
+import android.util.Log
 import android.os.UserHandle
 import android.view.View
 import android.view.ViewGroup
@@ -38,6 +44,32 @@ constructor(
     
     private var clockStyleView: ClockStyle? = null
     private var isCustomClockEnabled: Boolean = false
+
+    // The lock screen layout only reads the clock style when SystemUI starts
+    // (crDroid restarts SystemUI from its settings app). Restart SystemUI here
+    // when the style changes, so any settings app works.
+    private val styleAtStart = currentStyle()
+
+    private val styleObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
+        override fun onChange(selfChange: Boolean) {
+            if (currentStyle() != styleAtStart) {
+                Log.i(TAG, "Lock screen clock style changed, restarting SystemUI")
+                Process.killProcess(Process.myPid())
+            }
+        }
+    }
+
+    init {
+        context.contentResolver.registerContentObserver(
+            Settings.Secure.getUriFor(ClockStyle.CLOCK_STYLE_KEY),
+            false,
+            styleObserver,
+            UserHandle.USER_ALL,
+        )
+    }
+
+    private fun currentStyle(): Int =
+        secureSettings.getIntForUser(ClockStyle.CLOCK_STYLE_KEY, 0, UserHandle.USER_CURRENT)
     
     override fun addViews(constraintLayout: ConstraintLayout) {
         
@@ -117,5 +149,9 @@ constructor(
             (clockView.parent as? ViewGroup)?.removeView(clockView)
         }
         clockStyleView = null
+    }
+
+    private companion object {
+        const val TAG = "KeyguardClockStyle"
     }
 }
