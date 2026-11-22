@@ -419,11 +419,10 @@ class ClockStyle @JvmOverloads constructor(
             (tc.getTag(R.id.original_typeface) as? Typeface)?.let { tc.typeface = it }
 
             val originalColor = tc.getTag(R.id.original_text_color) as Int
-            val isWhiteOriginal = (originalColor and 0x00FFFFFF) == (whiteColor and 0x00FFFFFF)
             tc.setTextColor(
                 when {
                     isDozing -> whiteColor
-                    !isWhiteOriginal -> originalColor
+                    colorMode == COLOR_MODE_DEFAULT -> originalColor
                     else -> resolveClockColor()
                 }
             )
@@ -436,11 +435,10 @@ class ClockStyle @JvmOverloads constructor(
                 tv.setTag(R.id.original_text_color, tv.currentTextColor)
             }
             val originalColor = tv.getTag(R.id.original_text_color) as Int
-            val isWhiteOriginal = (originalColor and 0x00FFFFFF) == (whiteColor and 0x00FFFFFF)
             tv.setTextColor(
                 when {
                     isDozing -> whiteColor
-                    !isWhiteOriginal -> originalColor
+                    colorMode == COLOR_MODE_DEFAULT -> originalColor
                     else -> resolveClockColor()
                 }
             )
