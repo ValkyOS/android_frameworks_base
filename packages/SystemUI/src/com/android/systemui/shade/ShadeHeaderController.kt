@@ -709,6 +709,16 @@ constructor(
 
     @VisibleForTesting internal fun simulateViewDetached() = this.onViewDetached()
 
+    fun setValkyOsCornerSpreadTransform(progress: Float, originLeft: Boolean) {
+        val scale = 0.82f + 0.18f * progress
+        mView.pivotX = if (originLeft) 0f else mView.width.toFloat()
+        mView.pivotY = 0f
+        mView.scaleX = scale
+        mView.scaleY = scale
+        mView.translationX =
+            (if (originLeft) -1f else 1f) * mView.width * 0.12f * (1f - progress)
+    }
+
     inner class CustomizerAnimationListener(private val enteringCustomizing: Boolean) :
         AnimatorListenerAdapter() {
         override fun onAnimationEnd(animation: Animator) {

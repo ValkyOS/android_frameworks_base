@@ -42,12 +42,14 @@ import android.graphics.Rect;
 import android.graphics.Region;
 import android.os.Handler;
 import android.os.UserHandle;
+import android.provider.Settings;
 import android.util.IndentingPrintWriter;
 import android.util.Log;
 import android.util.MathUtils;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.VelocityTracker;
+import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.WindowInsets;
 import android.view.WindowManager;
@@ -300,6 +302,9 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
 
     private int mOneFingerQuickSettingsIntercept;
     private final ContentObserver mOneFingerQuickSettingsInterceptObserver;
+    private boolean mValkyOsCornerSpreadEnabled;
+    private boolean mValkyOsCornerSpreadDualEnabled;
+    private final ContentObserver mValkyOsCornerSpreadObserver;
 
     private final Region mInterceptRegion = new Region();
     /** The end bounds of a clipping animation. */
@@ -431,6 +436,20 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
                         mPanelView.getContext().getContentResolver(),
                         LineageSettings.System.STATUS_BAR_QUICK_QS_PULLDOWN, 0,
                         selectedUserInteractor.getSelectedUserId());
+            }
+        };
+
+        mValkyOsCornerSpreadObserver = new ContentObserver(null) {
+            @Override
+            public void onChange(boolean selfChange) {
+                int userId = selectedUserInteractor.getSelectedUserId();
+                mValkyOsCornerSpreadEnabled = Settings.Secure.getIntForUser(
+                        mPanelView.getContext().getContentResolver(),
+                        Settings.Secure.VALKYOS_QS_CORNER_SPREAD, 0, userId) != 0;
+                mValkyOsCornerSpreadDualEnabled = Settings.Secure.getIntForUser(
+                        mPanelView.getContext().getContentResolver(),
+                        Settings.Secure.VALKYOS_QS_CORNER_SPREAD_DUAL, 0, userId) != 0;
+                updateValkyOsCornerSpread();
             }
         };
 
@@ -1143,12 +1162,44 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
         mShadeHeaderController.setShadeExpandedFraction(shadeExpandedFraction);
         mShadeHeaderController.setQsExpandedFraction(qsExpansionFraction);
         mShadeHeaderController.setQsVisible(mVisible);
+        updateValkyOsCornerSpread();
 
         // Update the light bar
         mLightBarController.setQsExpanded(mFullyExpanded);
 
         // Update full screen state
         setQsFullScreen(/* qsFullScreen = */ mFullyExpanded && !mSplitShadeEnabled);
+    }
+
+    private void updateValkyOsCornerSpread() {
+        boolean enabled = mBarState == SHADE && (mSplitShadeEnabled
+                ? mValkyOsCornerSpreadDualEnabled : mValkyOsCornerSpreadEnabled);
+        boolean originLeft = mInitialTouchX <= mPanelView.getWidth() / 2f;
+        float headerProgress = enabled ? getValkyOsCornerSpreadProgress(0f) : 1f;
+        float qsProgress = enabled ? getValkyOsCornerSpreadProgress(0.06f) : 1f;
+        float notificationsProgress = enabled ? getValkyOsCornerSpreadProgress(0.14f) : 1f;
+
+        mShadeHeaderController.setValkyOsCornerSpreadTransform(headerProgress, originLeft);
+        applyValkyOsCornerSpreadTransform(mQsFrame, qsProgress, originLeft);
+        mNotificationStackScrollLayoutController.setValkyOsCornerSpreadTransform(
+                notificationsProgress, originLeft);
+    }
+
+    private float getValkyOsCornerSpreadProgress(float delay) {
+        float progress = MathUtils.constrain(
+                (mShadeExpandedFraction - delay) / (1f - delay), 0f, 1f);
+        return Interpolators.FAST_OUT_SLOW_IN.getInterpolation(progress);
+    }
+
+    private static void applyValkyOsCornerSpreadTransform(
+            View view, float progress, boolean originLeft) {
+        float scale = MathUtils.lerp(0.82f, 1f, progress);
+        view.setPivotX(originLeft ? 0f : view.getWidth());
+        view.setPivotY(0f);
+        view.setScaleX(scale);
+        view.setScaleY(scale);
+        view.setTranslationX((originLeft ? -1f : 1f)
+                * view.getWidth() * 0.12f * (1f - progress));
     }
 
     float getLockscreenShadeDragProgress() {
@@ -1705,6 +1756,9 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
             }
         }
         final int action = event.getActionMasked();
+        if (action == MotionEvent.ACTION_DOWN) {
+            mInitialTouchX = event.getX();
+        }
         boolean collapsedQs = !getExpanded() && !mSplitShadeEnabled;
         boolean expansionEnabled = isExpansionEnabled();
         if (!expansionEnabled) {
@@ -2333,6 +2387,13 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
                     false, mOneFingerQuickSettingsInterceptObserver,
                     UserHandle.USER_ALL);
             mOneFingerQuickSettingsInterceptObserver.onChange(true);
+            mPanelView.getContext().getContentResolver().registerContentObserver(
+                    Settings.Secure.getUriFor(Settings.Secure.VALKYOS_QS_CORNER_SPREAD),
+                    false, mValkyOsCornerSpreadObserver, UserHandle.USER_ALL);
+            mPanelView.getContext().getContentResolver().registerContentObserver(
+                    Settings.Secure.getUriFor(Settings.Secure.VALKYOS_QS_CORNER_SPREAD_DUAL),
+                    false, mValkyOsCornerSpreadObserver, UserHandle.USER_ALL);
+            mValkyOsCornerSpreadObserver.onChange(true);
             updateExpansion();
         }
 
@@ -2343,6 +2404,8 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
         public void onFragmentViewDestroyed(String tag, Fragment fragment) {
             mPanelView.getContext().getContentResolver().unregisterContentObserver(
                     mOneFingerQuickSettingsInterceptObserver);
+            mPanelView.getContext().getContentResolver().unregisterContentObserver(
+                    mValkyOsCornerSpreadObserver);
             // Manual handling of fragment lifecycle is only required because this bridges
             // non-fragment and fragment code. Once we are using a fragment for the notification
             // panel, mQs will not need to be null cause it will be tied to the same lifecycle.

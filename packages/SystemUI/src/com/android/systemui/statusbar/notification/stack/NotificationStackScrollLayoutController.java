@@ -1139,6 +1139,16 @@ public class NotificationStackScrollLayoutController implements Dumpable {
         mView.setTranslationX(translationX);
     }
 
+    public void setValkyOsCornerSpreadTransform(float progress, boolean originLeft) {
+        float scale = 0.82f + 0.18f * progress;
+        mView.setPivotX(originLeft ? 0f : mView.getWidth());
+        mView.setPivotY(0f);
+        mView.setScaleX(scale);
+        mView.setScaleY(scale);
+        mView.setTranslationX((originLeft ? -1f : 1f)
+                * mView.getWidth() * 0.12f * (1f - progress));
+    }
+
     public int indexOfChild(View view) {
         return mView.indexOfChild(view);
     }

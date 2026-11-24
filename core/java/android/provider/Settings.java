@@ -11844,6 +11844,29 @@ public final class Settings {
         @android.provider.Settings.Readable
         public static final String DUAL_SHADE = "dual_shade";
 
+        /**
+         * Whether ValkyOS should animate the combined notification and Quick Settings shade from
+         * the corner where the pull-down gesture started.
+         * <p>
+         * Type: int (0 for false, 1 for true)
+         *
+         * @hide
+         */
+        @Readable
+        public static final String VALKYOS_QS_CORNER_SPREAD = "valkyos_qs_corner_spread";
+
+        /**
+         * Whether ValkyOS should animate the separate notification and Quick Settings panels from
+         * their respective top corners.
+         * <p>
+         * Type: int (0 for false, 1 for true)
+         *
+         * @hide
+         */
+        @Readable
+        public static final String VALKYOS_QS_CORNER_SPREAD_DUAL =
+                "valkyos_qs_corner_spread_dual";
+
        /**
          * 1 if it is allowed to remove the primary GAIA account. 0 by default.
          * @hide
