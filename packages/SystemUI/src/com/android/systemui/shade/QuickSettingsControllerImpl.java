@@ -1174,10 +1174,12 @@ public class QuickSettingsControllerImpl implements QuickSettingsController, Dum
     private void updateValkyOsCornerSpread() {
         boolean enabled = mBarState == SHADE && (mSplitShadeEnabled
                 ? mValkyOsCornerSpreadDualEnabled : mValkyOsCornerSpreadEnabled);
+        boolean animationActive = enabled && mShadeExpandedFraction > 0f;
         boolean originLeft = mInitialTouchX <= mPanelView.getWidth() / 2f;
-        float headerProgress = enabled ? getValkyOsCornerSpreadProgress(0f) : 1f;
-        float qsProgress = enabled ? getValkyOsCornerSpreadProgress(0.06f) : 1f;
-        float notificationsProgress = enabled ? getValkyOsCornerSpreadProgress(0.14f) : 1f;
+        float headerProgress = animationActive ? getValkyOsCornerSpreadProgress(0f) : 1f;
+        float qsProgress = animationActive ? getValkyOsCornerSpreadProgress(0.06f) : 1f;
+        float notificationsProgress = animationActive
+                ? getValkyOsCornerSpreadProgress(0.14f) : 1f;
 
         mShadeHeaderController.setValkyOsCornerSpreadTransform(headerProgress, originLeft);
         applyValkyOsCornerSpreadTransform(mQsFrame, qsProgress, originLeft);
